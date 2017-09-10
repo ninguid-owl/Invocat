@@ -8,27 +8,32 @@
 
 typealias SRange = Range<String.Index>
 
+private var blank = ""
 enum TokenType: String {
-    case name    = "[\\w_!'?.,;]+"  // Allow some punctuation. TODO: consider space
+
+    // Names are one or more alphanumeric characters and some symbols
+    // with spaces between. They cannot end with a space.
+    case name = "[\\w_!'?.,;]+( +[\\w_!'?.,;]+)*"
     case number  = "[\\d]+"
     
     case lparen  = "[(]"
     case rparen  = "[)]"
     case lbrace  = "[{]"
     case rbrace  = "[}]"
-    case pipe    = "[|]"            // TODO: surround with white?
-    
-    case define  = "[:]{2}"         // TODO: capture space before?
-    case defEval = "[:][!]"         // ...
-    case select  = "[<][-]"
-    case selEval = "[<][!]"
+
+    // These operators consume the whitespace before and after them.
+    case pipe    = "[\\p{Blank}]*[|][\\p{Blank}]*"
+    case define  = "[\\p{Blank}]*[:]{2}[\\p{Blank}]*"   // ::
+    case defEval = "[\\p{Blank}]*[:][!][\\p{Blank}]*"   // :!
+    case select  = "[\\p{Blank}]*[<][-][\\p{Blank}]*"   // <-
+    case selEval = "[\\p{Blank}]*[<][!][\\p{Blank}]*"   // <!
     
     case comment = "[-]{2}\\s+.*$"
     case rule1   = "[-]{3,}.*$"
     case rule2   = "[=]{3,}.*$"
     
     case white   = "[\\s]+"
-    case escape  = "\\\\[n(){}]"    // Could add r, t, etc.
+    case escape  = "\\\\[nrt(){}|]"
     case split   = "\\\\$"
     case punct   = "[\\p{Punctuation}]"
     case newline = "[\\\\n]"
@@ -36,8 +41,8 @@ enum TokenType: String {
     // Provide a way to iterate over the cases in order
     static let all = [
         name, number,
-        lparen, rparen, lbrace, rbrace, pipe,
-        define, defEval, select, selEval,
+        lparen, rparen, lbrace, rbrace,
+        pipe, define, defEval, select, selEval,
         comment, rule1, rule2,
         white, escape, split, punct, newline
     ]
@@ -64,7 +69,6 @@ struct Lexer {
     let text: String
     
     func getTokens() -> [Token] {
-
         var tokens: [Token] = []
         
         // Separate the text by newlines. This makes it very easy to
@@ -92,7 +96,6 @@ struct Lexer {
             }
             fatalError("Nothing matched: \(text[window])")
         }
-
 
         for (idx, str) in lines.enumerated() {
             (line, text) = (idx, str)
