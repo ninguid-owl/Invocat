@@ -64,24 +64,45 @@ struct Lexer {
     let text: String
     
     func getTokens() -> [Token] {
+
         var tokens: [Token] = []
         
         // Separate the text by newlines. This makes it very easy to
         // strip leading and trailing whitespace but means we have to
         // manually add a newline token each time through the loop.
         // TODO: Consider just letting the regex handle the newline.
-        let lines = text.components(separatedBy: .newlines)
+        let lines = self.text.components(separatedBy: .newlines)
         
         // TODO: Trim leading and trailing whitespace?
         //lines = lines.map{ $0.trimmingCharacters(in: .whitespaces)}
         
-        for (line, text) in lines.enumerated() {
+        var line: Int       // Keep track of the current line number
+        var text: String    // The text from the current line
+
+        // Define a helper function that closes over the line and text vars
+        func nextToken(in window: SRange) -> (Token, SRange) {
+            // Try to match each token type using its regular expression,
+            // which we first anchor to the beginning of the range.
+            for type in TokenType.all {
+                let regex = "^\(type.rawValue)"
+                if let range = text.range(of: regex, options: .regularExpression, range: window) {
+                    let token = Token(type: type, lexeme: text[range], line: line)
+                    return (token, range)
+                }
+            }
+            fatalError("Nothing matched: \(text[window])")
+        }
+
+
+        for (idx, str) in lines.enumerated() {
+            (line, text) = (idx, str)
+
             var range = text.startIndex..<text.endIndex
             
             while !range.isEmpty {
                 // Get the next token and then narrow the search range
                 // using the token's end position.
-                let (token, bounds) = nextToken(on: line, from: text, in: range)
+                let (token, bounds) = nextToken(in: range)
                 range = bounds.upperBound..<text.endIndex
                 if token.type != .comment {
                     tokens.append(token)
@@ -90,18 +111,5 @@ struct Lexer {
             tokens.append(Token(type: .newline, lexeme: "", line: line))
         }
         return tokens
-    }
-    
-    func nextToken(on line: Int, from text: String, in window: SRange) -> (Token, SRange) {
-        // Try to match each token type using its regular expression
-        // within the window.
-        for type in TokenType.all {
-            let regex = "^\(type.rawValue)"  // Anchor to beginning of the range
-            if let range = text.range(of: regex, options: .regularExpression, range: window) {
-                let token = Token(type: type, lexeme: text[range], line: line)
-                return (token, range)
-            }
-        }
-        fatalError("Nothing matched: \(text[window])")
     }
 }
