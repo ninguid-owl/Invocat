@@ -34,68 +34,52 @@ indirect enum InvExp {
 
 // NOTE Functional approach: eval takes (expression, state) and returns (state, value).
 // This may eventually need to be optimized because it is definitely not efficient.
-// Although we could move the return outside the switch, that is even
-// less efficient in the cases where state doesn't have to be copied.
 func eval(_ exp: InvExp?, in state: InvState) -> (state: InvState, value: String?) {
-    guard exp != nil else { return (state, nil) }
-    switch exp! {
+    guard let exp = exp else { return (state, nil) }
+    var newState = state
+    var value: String? = nil
+    switch exp {
     case let .definition(name, items):
-        var newState = state
         newState[name] = items
-        return (newState, nil)
     case let .selection(name, items):
-        var newState = state
         if let item = items.randomElement() {
             newState[name] = [item]
         }
-        return (newState, nil)
     case let .evaluatingDefinition(name, items):
-        var newState = state
         var newItems: [InvExp] = []
         for item in items {
-            let value: String?
-            (newState, value) = eval(item, in: newState)
-            if value != nil {
-                newItems.append(.literal(literal: value!))
+            let itemValue: String?
+            (newState, itemValue) = eval(item, in: newState)
+            if let itemValue = itemValue {
+                newItems.append(.literal(literal: itemValue))
             }
         }
         newState[name] = newItems
-        return (newState, nil)
     case let .evaluatingSelection(name, items):
-        var newState = state
         if let item = items.randomElement() {
-            let value: String?
-            (newState, value) = eval(item, in: newState)
-            if value != nil {
-                newState[name] = [.literal(literal: value!)]
+            let itemValue: String?
+            (newState, itemValue) = eval(item, in: newState)
+            if let itemValue = itemValue {
+                newState[name] = [.literal(literal: itemValue)]
             }
         }
-        return (newState, nil)
     case let .reference(name):
-        var newState = state
-        let value: String?
         (newState, value) = eval(state[name]?.randomElement(), in: newState)
-        return (newState, value)
     case let .draw(name):
         if let item = state[name]?.randomElement() {
-            var newState = state
             let remainingItems = newState[name]?.filter({$0 != item})
             newState[name] = (remainingItems?.isEmpty ?? true) ? nil : remainingItems
-            let value: String?
             (newState, value) = eval(item, in: newState)
-            return (newState, value)
         }
-        return (state, nil)
     case let .literal(literal):
-        return (state, literal)
+        value = literal
     case let .mix(item1, item2):
-        var newState = state
         let lhs: String?, rhs: String?
         (newState, lhs) = eval(item1, in: newState)
         (newState, rhs) = eval(item2, in: newState)
-        let value = "\(lhs ?? "")\(rhs ?? "")"
-        return (newState, value)
+        value = "\(lhs ?? "")\(rhs ?? "")"
     }
+    return (newState, value)
 }
 
 // Extensions & operators
