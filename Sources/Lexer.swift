@@ -2,8 +2,6 @@
 //  Lexer.swift
 //  LibInvocat
 //
-//  Created by Matthew Antoun on 2017-09-09.
-//
 //
 
 typealias SRange = Range<String.Index>
@@ -13,8 +11,9 @@ enum TokenType: String {
 
     // Names are one or more alphanumeric characters and some symbols
     // with spaces between. They cannot end with a space.
-    case name = "[\\w_!'?.,;]+( +[\\w_!'?.,;]+)*"
+    // Names include numbers so check for number first.
     case number  = "[\\d]+"
+    case name = "[\\w_!'?.,;]+( +[\\w_!'?.,;]+)*"
     
     case lparen  = "[(]"
     case rparen  = "[)]"
@@ -28,19 +27,19 @@ enum TokenType: String {
     case select  = "[\\p{Blank}]*[<][-][\\p{Blank}]*"   // <-
     case selEval = "[\\p{Blank}]*[<][!][\\p{Blank}]*"   // <!
     
-    case comment = "[-]{2}\\s+.*$"
+    case comment = "[-]{2}\\s+.*$"          // TODO: match the newline too?
     case rule1   = "[-]{3,}.*$"
     case rule2   = "[=]{3,}.*$"
     
     case white   = "[\\s]+"
     case escape  = "\\\\[nrt(){}|]"
     case split   = "\\\\$"
-    case punct   = "[\\p{Punctuation}]"
+    case punct   = "[\\p{Punctuation}]"     // TODO: What is this used for?
     case newline = "[\\\\n]"
     
     // Provide a way to iterate over the cases in order
     static let all = [
-        name, number,
+        number, name,
         lparen, rparen, lbrace, rbrace,
         pipe, define, defEval, select, selEval,
         comment, rule1, rule2,
