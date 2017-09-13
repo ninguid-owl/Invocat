@@ -116,5 +116,12 @@ class LexerTests: XCTestCase {
         checkTypes(text, expected)
     }
 
-    // TODO: enumerate tests for Linux
+    // Enumerate tests for Linux
+    static var allTests = [
+        ("testNameRegex", testNameRegex),
+        ("testOperators", testOperators),
+        ("testEscapesAndSplit", testEscapesAndSplit),
+        ("testCommentsAndRules", testCommentsAndRules),
+        ("testNumbers", testNumbers),
+    ]
 }
