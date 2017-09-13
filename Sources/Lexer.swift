@@ -27,24 +27,26 @@ enum TokenType: String {
     case select  = "[\\p{Blank}]*[<][-][\\p{Blank}]*"   // <-
     case selEval = "[\\p{Blank}]*[<][!][\\p{Blank}]*"   // <!
     
-    case comment = "[-]{2}\\s+.*$"          // TODO: match the newline too?
-    case rule1   = "[-]{3,}.*$"
-    case rule2   = "[=]{3,}.*$"
-    
+    case comment = "[-]{2}\\s+.*"
+    case rule1   = "[-]{3,}.*"              // TODO: consume newlines?
+    case rule2   = "[=]{3,}.*"
+
+    case split   = "[\\\\][\\v]"            // \ and vertical whitespace
+    case newline = "[\\n]"
     case white   = "[\\s]+"
-    case escape  = "\\\\[nrt(){}|]"
-    case split   = "\\\\$"
+    case escape  = "\\\\[nrt(){}|\\\\]"
     case punct   = "[\\p{Punctuation}]"     // TODO: What is this used for?
-    case newline = "[\\\\n]"
-    
+
     // Provide a way to iterate over the cases in order
     static let all = [
         number, name,
         lparen, rparen, lbrace, rbrace,
         pipe, define, defEval, select, selEval,
         comment, rule1, rule2,
-        white, escape, split, punct, newline
+        split, newline, white, escape, punct
     ]
+
+    // TODO: define match method here?
 }
 
 struct Token {
@@ -65,53 +67,39 @@ extension Token: CustomStringConvertible {
 }
 
 struct Lexer {
-    let text: String
-    
-    func getTokens() -> [Token] {
+
+    static func getTokens(text: String) -> [Token] {
         var tokens: [Token] = []
-        
-        // Separate the text by newlines. This makes it very easy to
-        // strip leading and trailing whitespace but means we have to
-        // manually add a newline token each time through the loop.
-        // TODO: Consider just letting the regex handle the newline.
-        let lines = self.text.components(separatedBy: .newlines)
-        
-        // TODO: Trim leading and trailing whitespace?
-        //lines = lines.map{ $0.trimmingCharacters(in: .whitespaces)}
-        
-        var line: Int       // Keep track of the current line number
-        var text: String    // The text from the current line
+        var range = text.startIndex..<text.endIndex  // The search window
+        var line: Int = 0                            // The current line number
 
-        // Define a helper function that closes over the line and text vars
-        func nextToken(in window: SRange) -> (Token, SRange) {
-            // Try to match each token type using its regular expression,
-            // which we first anchor to the beginning of the range.
-            for type in TokenType.all {
-                let regex = "^\(type.rawValue)"
-                if let range = text.range(of: regex, options: .regularExpression, range: window) {
-                    let token = Token(type: type, lexeme: text[range], line: line)
-                    return (token, range)
-                }
+        while !range.isEmpty {
+            // Get the next token type and then narrow the search range
+            // using the token's end position.
+            let (type, bounds) = nextTokenType(from: text, in: range)
+            range = bounds.upperBound..<text.endIndex
+
+            if type == .comment || type == .split {
+                continue        // Don't add split or comment tokens.
             }
-            fatalError("Nothing matched: \(text[window])")
+            if type == .newline { line += 1 }
+            let token = Token(type: type, lexeme: text[bounds], line: line)
+            tokens.append(token)
         }
-
-        for (idx, str) in lines.enumerated() {
-            (line, text) = (idx, str)
-
-            var range = text.startIndex..<text.endIndex
-            
-            while !range.isEmpty {
-                // Get the next token and then narrow the search range
-                // using the token's end position.
-                let (token, bounds) = nextToken(in: range)
-                range = bounds.upperBound..<text.endIndex
-                if token.type != .comment {
-                    tokens.append(token)
-                }
-            }
-            tokens.append(Token(type: .newline, lexeme: "", line: line))
-        }
+        // TODO: add .eof?
         return tokens
+    }
+
+    static func nextTokenType(from s: String, in window: SRange) -> (TokenType, SRange) {
+        // Try to match each token type using its regular expression,
+        // which is anchored to the beginning of the range.
+        let opts: String.CompareOptions = [.regularExpression, .anchored]
+        for type in TokenType.all {
+            let regex = type.rawValue
+            if let range = s.range(of: regex, options: opts, range: window) {
+                return (type, range)
+            }
+        }
+        fatalError("Nothing matched: \(s[window])")
     }
 }

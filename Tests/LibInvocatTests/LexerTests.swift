@@ -33,7 +33,7 @@ class LexerTests: XCTestCase {
     // Helper function to compare the token types returned by lexing
     // with an expected set.
     func checkTypes(_ text: String, _ expected: [TokenType]) {
-        let tokens: [Token] = Lexer(text: text).getTokens()
+        let tokens: [Token] = Lexer.getTokens(text: text)
         let types: [TokenType] = tokens.map{ $0.type }
         XCTAssertEqual(types, expected,
             "Unexpected token types in <\(text)>\n" +
@@ -47,22 +47,22 @@ class LexerTests: XCTestCase {
         // Operators consume whitespace but it's significant between parens
         text = "artifact :: a (fixed quality) (weapon)"
         expected = [.name, .define, .name, .white, .lparen, .name, .rparen,
-                    .white, .lparen, .name, .rparen, .newline]
+                    .white, .lparen, .name, .rparen]
         checkTypes(text, expected)
         
         // Pipes consume whitespace
         text = "fixed quality <- gleaming | dull "
-        expected = [.name, .select, .name, .pipe, .name, .white, .newline]
+        expected = [.name, .select, .name, .pipe, .name, .white]
         checkTypes(text, expected)
         
         // EvaluatingSelection operator
         text = "weapon <! {artifact}"
-        expected = [.name, .selEval, .lbrace, .name, .rbrace, .newline]
+        expected = [.name, .selEval, .lbrace, .name, .rbrace]
         checkTypes(text, expected)
 
         // EvaluatingDefine operator
         text = "weapon :! sword | axe"
-        expected = [.name, .defEval, .name, .pipe, .name, .newline]
+        expected = [.name, .defEval, .name, .pipe, .name]
         checkTypes(text, expected)
     }
 
@@ -72,13 +72,17 @@ class LexerTests: XCTestCase {
 
         // More operators and escape characters
         text = "weapon <! {artifact} \\n"
-        expected = [.name, .selEval, .lbrace, .name, .rbrace, .white,
-                    .escape, .newline]
+        expected = [.name, .selEval, .lbrace, .name, .rbrace, .white, .escape]
         checkTypes(text, expected)
 
-        // Check split
-        text = "a long line \\"
-        expected = [.name, .white, .split, .newline]
+        // Check split is consumed
+        text = "a long line\\" + "\na continuation"
+        expected = [.name, .name]
+        checkTypes(text, expected)
+
+        // Check escaping backslash
+        text = "escape a backslash \\\\"
+        expected = [.name, .white, .escape]
         checkTypes(text, expected)
     }
 
@@ -88,12 +92,12 @@ class LexerTests: XCTestCase {
 
         // Note .comment tokens are not emitted by the lexer
         text = "weapon :! sword | axe -- a comment"
-        expected = [.name, .defEval, .name, .pipe, .name, .white, .newline]
+        expected = [.name, .defEval, .name, .pipe, .name, .white]
         checkTypes(text, expected)
 
         // Check rule1 and rule2
         text = "-----------\n==========="
-        expected = [.rule1, .newline, .rule2, .newline]
+        expected = [.rule1, .newline, .rule2]
         checkTypes(text, expected)
     }
 
@@ -103,12 +107,14 @@ class LexerTests: XCTestCase {
 
         // Numbers must appear before names or they are eaten
         text = "1 time"
-        expected = [.number, .white, .name, .newline]
+        expected = [.number, .white, .name]
         checkTypes(text, expected)
 
         // Numbers in the middle of a line are grouped with names
         text = "Times 1"
-        expected = [.name, .newline]
+        expected = [.name]
         checkTypes(text, expected)
     }
+
+    // TODO: enumerate tests for Linux
 }
