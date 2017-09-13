@@ -32,78 +32,102 @@ indirect enum InvExp {
 
 // Eval
 
-// NOTE Functional approach: eval takes (expression, state) and returns (state, value).
-// This may eventually need to be optimized because it is definitely not efficient.
-func eval(_ exp: InvExp?, in state: InvState) -> (state: InvState, value: String?) {
-    guard let exp = exp else { return (state, nil) }
-    var newState = state
-    var value: String? = nil
-    switch exp {
-    case let .definition(name, items):
-        newState[name] = items
-    case let .selection(name, items):
-        if let item = items.randomElement() {
-            newState[name] = [item]
-        }
-    case let .evaluatingDefinition(name, items):
-        var newItems: [InvExp] = []
-        for item in items {
-            let itemValue: String?
-            (newState, itemValue) = eval(item, in: newState)
-            if let itemValue = itemValue {
-                newItems.append(.literal(literal: itemValue))
-            }
-        }
-        newState[name] = newItems
-    case let .evaluatingSelection(name, items):
-        if let item = items.randomElement() {
-            let itemValue: String?
-            (newState, itemValue) = eval(item, in: newState)
-            if let itemValue = itemValue {
-                newState[name] = [.literal(literal: itemValue)]
-            }
-        }
-    case let .reference(name):
-        (newState, value) = eval(state[name]?.randomElement(), in: newState)
-    case let .draw(name):
-        if let item = state[name]?.randomElement() {
-            let remainingItems = newState[name]?.filter({$0 != item})
-            newState[name] = (remainingItems?.isEmpty ?? true) ? nil : remainingItems
-            (newState, value) = eval(item, in: newState)
-        }
-    case let .literal(literal):
-        value = literal
-    case let .mix(item1, item2):
-        let lhs: String?, rhs: String?
-        (newState, lhs) = eval(item1, in: newState)
-        (newState, rhs) = eval(item2, in: newState)
-        value = "\(lhs ?? "")\(rhs ?? "")"
+class Evaluator {
+    let randomSource: GKRandomSource
+    private var distributions: [Int: GKRandomDistribution] = [:] // Cache
+
+    init() {
+        let seed = "Today the furnace opens its mouth"
+        let seedData = Data(seed.utf8)
+        randomSource = GKARC4RandomSource(seed: seedData)
     }
-    return (newState, value)
+
+    init(seed: String) {
+        let seed = seed
+        let seedData = Data(seed.utf8)
+        randomSource = GKARC4RandomSource(seed: seedData)
+    }
+
+    // Return random element from Array
+    func randomElement<Element>(_ array: [Element]?) -> Element? {
+        guard let array = array else { return nil }
+        if array.isEmpty { return nil }
+        let distribution = getDistributionFrom0To(highestValue: array.count-1)
+        return array[distribution.nextInt()]
+    }
+
+    // Return a distribution from 0 to highestValue using randomSource.
+    // The evaluator caches the distributions rather than regenerate them
+    // for each request.
+    func getDistributionFrom0To(highestValue: Int) -> GKRandomDistribution {
+        if let distribution = self.distributions[highestValue] {
+            return distribution
+        }
+        let distribution = GKRandomDistribution(randomSource: randomSource,
+                                                lowestValue: 0,
+                                                highestValue: highestValue)
+        self.distributions[highestValue] = distribution
+        return distribution
+    }
+
+    // NOTE Functional approach: eval takes (expression, state) and
+    // returns (state, value). This may eventually need to be optimized because
+    // it is definitely not efficient.
+    func eval(_ exp: InvExp?, in state: InvState) -> (state: InvState,
+                                                      value: String?) {
+        guard let exp = exp else { return (state, nil) }
+        var newState = state
+        var value: String? = nil
+        switch exp {
+        case let .definition(name, items):
+            newState[name] = items
+        case let .selection(name, items):
+            if let item = randomElement(items) {
+                newState[name] = [item]
+            }
+        case let .evaluatingDefinition(name, items):
+            var newItems: [InvExp] = []
+            for item in items {
+                let itemValue: String?
+                (newState, itemValue) = eval(item, in: newState)
+                if let itemValue = itemValue {
+                    newItems.append(.literal(literal: itemValue))
+                }
+            }
+            newState[name] = newItems
+        case let .evaluatingSelection(name, items):
+            if let item = randomElement(items) {
+                let itemValue: String?
+                (newState, itemValue) = eval(item, in: newState)
+                if let itemValue = itemValue {
+                    newState[name] = [.literal(literal: itemValue)]
+                }
+            }
+        case let .reference(name):
+            (newState, value) = eval(randomElement(state[name]), in: newState)
+        case let .draw(name):
+            if let item = randomElement(state[name]) {
+                let remainingItems = newState[name]?.filter({$0 != item})
+                newState[name] = (remainingItems?.isEmpty ?? true) ?
+                    nil : remainingItems
+                (newState, value) = eval(item, in: newState)
+            }
+        case let .literal(literal):
+            value = literal
+        case let .mix(item1, item2):
+            let lhs: String?, rhs: String?
+            (newState, lhs) = eval(item1, in: newState)
+            (newState, rhs) = eval(item2, in: newState)
+            value = "\(lhs ?? "")\(rhs ?? "")"
+        }
+        return (newState, value)
+    }
 }
 
 // Extensions & operators
 
-// Return random element from Array
-let seedString = "Atrament" // TODO for testing
-let seedData = Data(seedString.utf8)
-let randomSource = GKARC4RandomSource(seed: seedData)
-extension Array {
-    func randomElement() -> Element? {
-        if isEmpty { return nil }
-        let distribution = GKRandomDistribution(randomSource: randomSource, lowestValue: 0, highestValue: count-1)
-        return self[distribution.nextInt()]
-    }
-}
-
-// InvExp equatable
-extension InvExp: Equatable {
-    static func == (lhs: InvExp, rhs: InvExp) -> Bool {
-        return lhs.description == rhs.description
-    }
-}
-
 // Operators
+// TODO move to test??
 prefix operator ^   // literal
 prefix operator *   // reference
 prefix operator %   // draw
@@ -113,7 +137,7 @@ infix operator *!   // evaluatingDefinition
 infix operator ~!   // evaluatingSelection
 
 // Define operators
-// ... literal, reference, draw, definition, selection, 
+// ... literal, reference, draw, definition, selection,
 // evaluatingDefinition, evaluatingSelection
 extension String {
     static prefix func ^ (right: String) -> InvExp { return InvExp.literal(literal: right) }
@@ -136,6 +160,13 @@ extension String {
 extension InvExp {
     static func + (left: InvExp, right: InvExp) -> InvExp {
         return InvExp.mix(item1: left, item2: right)
+    }
+}
+
+// InvExp equatable
+extension InvExp: Equatable {
+    static func == (lhs: InvExp, rhs: InvExp) -> Bool {
+        return lhs.description == rhs.description
     }
 }
 
