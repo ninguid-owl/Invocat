@@ -73,8 +73,7 @@ class Evaluator {
     // NOTE Functional approach: eval takes (expression, state) and
     // returns (state, value). This may eventually need to be optimized because
     // it is definitely not efficient.
-    func eval(_ exp: InvExp?, in state: InvState) -> (state: InvState,
-                                                      value: String?) {
+    func eval(_ exp: InvExp?, in state: InvState) -> (state: InvState, value: String?) {
         guard let exp = exp else { return (state, nil) }
         var newState = state
         var value: String? = nil
@@ -108,8 +107,7 @@ class Evaluator {
         case let .draw(name):
             if let item = randomElement(state[name]) {
                 let remainingItems = newState[name]?.filter({$0 != item})
-                newState[name] = (remainingItems?.isEmpty ?? true) ?
-                    nil : remainingItems
+                newState[name] = (remainingItems?.isEmpty ?? true) ? nil : remainingItems
                 (newState, value) = eval(item, in: newState)
             }
         case let .literal(literal):
