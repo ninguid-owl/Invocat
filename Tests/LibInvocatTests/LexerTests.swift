@@ -33,7 +33,7 @@ class LexerTests: XCTestCase {
     // Helper function to compare the token types returned by lexing
     // with an expected set.
     func checkTypes(_ text: String, _ expected: [TokenType]) {
-        let tokens: [Token] = Lexer.getTokens(text: text)
+        let tokens: [Token] = Lexer.tokens(from: text)
         let types: [TokenType] = tokens.map{ $0.type }
         XCTAssertEqual(types, expected,
             "Unexpected token types in <\(text)>\n" +

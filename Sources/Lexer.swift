@@ -4,16 +4,22 @@
 //
 //
 
-typealias SRange = Range<String.Index>
+typealias Bounds = Range<String.Index>
 
-private var blank = ""
+/// The types of tokens emitted by the lexer.
+///
+/// The `rawValue` of each case is a regex that defines the allowable lexemes
+/// for that type.
+/// - Note: The regex is intended to be anchored when matching.
+/// - Note: Some lexemes are accepted by the regexes of mutliple cases.
+///         Therefore, the order in which the cases are tested is important.
 enum TokenType: String {
 
     // Names are one or more alphanumeric characters and some symbols
     // with spaces between. They cannot end with a space.
     // Names include numbers so check for number first.
     case number  = "[\\d]+"
-    case name = "[\\w_!'?.,;]+( +[\\w_!'?.,;]+)*"
+    case name    = "[\\w_!'?.,;]+( +[\\w_!'?.,;]+)*"
     
     case lparen  = "[(]"
     case rparen  = "[)]"
@@ -37,7 +43,7 @@ enum TokenType: String {
     case escape  = "\\\\[nrt(){}|\\\\]"
     case punct   = "[\\p{Punctuation}]"     // TODO: What is this used for?
 
-    // Provide a way to iterate over the cases in order
+    /// Provides a way to iterate over the cases in order.
     static let all = [
         number, name,
         lparen, rparen, lbrace, rbrace,
@@ -49,6 +55,10 @@ enum TokenType: String {
     // TODO: define match method here?
 }
 
+/// A token in Invocat's lexical syntax.
+///
+/// A `Token` encapsulates a type, the actual lexeme that was matched, and the
+/// number of the line on which it was matched.
 struct Token {
     let type: TokenType
     let lexeme: String
@@ -66,9 +76,13 @@ extension Token: CustomStringConvertible {
     }
 }
 
+/// A lexer for the Invocat language.
 struct Lexer {
 
-    static func getTokens(text: String) -> [Token] {
+    /// Scans the `text` and returns an array of `Tokens`.
+    ///
+    /// - Note: Comments and line split tokens are discarded.
+    static func tokens(from text: String) -> [Token] {
         var tokens: [Token] = []
         var range = text.startIndex..<text.endIndex  // The search window
         var line: Int = 0                            // The current line number
@@ -90,9 +104,15 @@ struct Lexer {
         return tokens
     }
 
-    static func nextTokenType(from s: String, in window: SRange) -> (TokenType, SRange) {
-        // Try to match each token type using its regular expression,
-        // which is anchored to the beginning of the range.
+    /// Returns the type and bounds of the first token in search window of the
+    /// provided String.
+    ///
+    /// - Parameter from: The text to search.
+    /// - Parameter in: The search window expressed as a `Range` of String
+    ///   indices.
+    static func nextTokenType(from s: String, in window: Bounds) -> (TokenType, Bounds) {
+        // Try to match each token type using its regular expression, which is
+        // anchored to the beginning of the range.
         let opts: String.CompareOptions = [.regularExpression, .anchored]
         for type in TokenType.all {
             let regex = type.rawValue
