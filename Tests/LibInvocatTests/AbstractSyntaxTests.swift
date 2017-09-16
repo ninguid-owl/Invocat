@@ -134,9 +134,15 @@ class AbstractSyntaxTests: XCTestCase {
         checkEval(drw_x2, in: env_x1b, expecting: (env0, val_stars))
     }
 
-    func testPerformanceExample() {
-        // This is an example of a performance test case.
-        self.measure {
-        }
-    }
+    // Enumerate tests for Linux
+    static var allTests = [
+        ("testLiteral", testLiteral),
+        ("testMix", testMix),
+        ("testDefinition", testDefinition),
+        ("testEvaluatingDefinition", testEvaluatingDefinition),
+        ("testSelection", testSelection),
+        ("testEvaluatingSelection", testEvaluatingSelection),
+        ("testReference", testReference),
+        ("testDraw", testDraw),
+    ]
 }
