@@ -123,9 +123,9 @@ class Parser {
         if multiline {
             // If we're matching multiline expressions, bail when we see a
             // rule1. Otherwise, join consecutive lines with a single space.
-            take(.newline)
+            let separator = take(.newline) != nil ? " " : ""
             if peek(.rule1) { return exp1 }
-            exp1 = InvExp.mix(item1: exp1, item2: InvExp.literal(literal: " "))
+            exp1 = InvExp.mix(item1: exp1, item2: InvExp.literal(literal: separator))
         }
         else if peek(.newline, .pipe, .eof) { return exp1 }
         guard let exp2 = mix(multiline: multiline) else {
