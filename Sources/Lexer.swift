@@ -43,7 +43,9 @@ enum TokenType: String {
     case escape  = "\\\\[nrt(){}|\\\\]"
     case punct   = "[\\p{Punctuation}]"     // TODO: What is this used for?
 
-    /// Provides a way to iterate over the cases in order.
+    case eof     = ""
+
+    /// Provides a way to iterate over the cases to be tested in order.
     static let all = [
         number, name,
         lparen, rparen, lbrace, rbrace,
@@ -100,7 +102,8 @@ struct Lexer {
             let token = Token(type: type, lexeme: text[bounds], line: line)
             tokens.append(token)
         }
-        // TODO: add .eof?
+        // Add the .eof token
+        tokens.append(Token(type: .eof, lexeme: "", line: line))
         return tokens
     }
 

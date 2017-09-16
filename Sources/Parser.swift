@@ -19,7 +19,7 @@ class Parser {
 
         stripNewlines()     // TODO: Should newlines ever be literals?
 
-        while current < tokens.count {
+        while current < tokens.count && !peek(.eof) {
             // As long as there's a token to examine, get a new expression
             // and consume all following newlines.
             guard let exp = expression() else {
@@ -127,7 +127,7 @@ class Parser {
             if peek(.rule1) { return exp1 }
             exp1 = InvExp.mix(item1: exp1, item2: InvExp.literal(literal: " "))
         }
-        else if peek(.newline, .pipe) { return exp1 }
+        else if peek(.newline, .pipe, .eof) { return exp1 }
         guard let exp2 = mix(multiline: multiline) else {
             fatalError(errorText("Expected second expression in mix."))
         }
@@ -214,7 +214,7 @@ class Parser {
                 fatalError(errorText("Expected expression parsing table."))
             }
             exps.append(exp)
-        } while seq(.newline, .newline) == nil
+        } while seq(.newline, .newline) == nil || seq(.eof) == nil
         return exps
     }
 
@@ -243,7 +243,7 @@ class Parser {
             if take(.rule1) == nil {
                 fatalError(errorText("Expected rule1 separated list items"))
             }
-        } while seq(.newline, .newline) == nil
+        } while seq(.newline, .newline) == nil || seq(.eof) == nil
         return exps
     }
 

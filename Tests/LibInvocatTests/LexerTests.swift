@@ -47,22 +47,22 @@ class LexerTests: XCTestCase {
         // Operators consume whitespace but it's significant between parens
         text = "artifact :: a (fixed quality) (weapon)"
         expected = [.name, .define, .name, .white, .lparen, .name, .rparen,
-                    .white, .lparen, .name, .rparen]
+                    .white, .lparen, .name, .rparen, .eof]
         checkTypes(text, expected)
         
         // Pipes consume whitespace
         text = "fixed quality <- gleaming | dull "
-        expected = [.name, .select, .name, .pipe, .name, .white]
+        expected = [.name, .select, .name, .pipe, .name, .white, .eof]
         checkTypes(text, expected)
         
         // EvaluatingSelection operator
         text = "weapon <! {artifact}"
-        expected = [.name, .selEval, .lbrace, .name, .rbrace]
+        expected = [.name, .selEval, .lbrace, .name, .rbrace, .eof]
         checkTypes(text, expected)
 
         // EvaluatingDefine operator
         text = "weapon :! sword | axe"
-        expected = [.name, .defEval, .name, .pipe, .name]
+        expected = [.name, .defEval, .name, .pipe, .name, .eof]
         checkTypes(text, expected)
     }
 
@@ -72,17 +72,17 @@ class LexerTests: XCTestCase {
 
         // More operators and escape characters
         text = "weapon <! {artifact} \\n"
-        expected = [.name, .selEval, .lbrace, .name, .rbrace, .white, .escape]
+        expected = [.name, .selEval, .lbrace, .name, .rbrace, .white, .escape, .eof]
         checkTypes(text, expected)
 
         // Check split is consumed
         text = "a long line\\" + "\na continuation"
-        expected = [.name, .name]
+        expected = [.name, .name, .eof]
         checkTypes(text, expected)
 
         // Check escaping backslash
         text = "escape a backslash \\\\"
-        expected = [.name, .white, .escape]
+        expected = [.name, .white, .escape, .eof]
         checkTypes(text, expected)
     }
 
@@ -92,12 +92,12 @@ class LexerTests: XCTestCase {
 
         // Note .comment tokens are not emitted by the lexer
         text = "weapon :! sword | axe -- a comment"
-        expected = [.name, .defEval, .name, .pipe, .name, .white]
+        expected = [.name, .defEval, .name, .pipe, .name, .white, .eof]
         checkTypes(text, expected)
 
         // Check rule1 and rule2
         text = "-----------\n==========="
-        expected = [.rule1, .newline, .rule2]
+        expected = [.rule1, .newline, .rule2, .eof]
         checkTypes(text, expected)
     }
 
@@ -107,12 +107,12 @@ class LexerTests: XCTestCase {
 
         // Numbers must appear before names or they are eaten
         text = "1 time"
-        expected = [.number, .white, .name]
+        expected = [.number, .white, .name, .eof]
         checkTypes(text, expected)
 
         // Numbers in the middle of a line are grouped with names
         text = "Times 1"
-        expected = [.name]
+        expected = [.name, .eof]
         checkTypes(text, expected)
     }
 
