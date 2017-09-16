@@ -49,7 +49,7 @@ class Evaluator {
     }
 
     // Return random element from Array
-    func randomElement<Element>(_ array: [Element]?) -> Element? {
+    private func randomElement<Element>(_ array: [Element]?) -> Element? {
         guard let array = array else { return nil }
         if array.isEmpty { return nil }
         let distribution = distributionFrom0To(array.count-1)
@@ -59,7 +59,7 @@ class Evaluator {
     // Return a distribution from 0 to highestValue using randomSource.
     // The evaluator caches the distributions rather than regenerate them
     // for each request.
-    func distributionFrom0To(_ highestValue: Int) -> GKRandomDistribution {
+    private func distributionFrom0To(_ highestValue: Int) -> GKRandomDistribution {
         if let distribution = self.distributions[highestValue] {
             return distribution
         }

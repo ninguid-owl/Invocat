@@ -4,7 +4,6 @@
 //
 //  TODO: Better errors. Throw instead of fatalError.
 //  TODO: Set access levels on parser functions
-//  TODO: comments must not require blank space after --
 //  TODO: formalize concrete syntax
 //
 //
