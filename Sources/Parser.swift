@@ -5,19 +5,23 @@
 //  TODO: Better errors. Throw instead of fatalError.
 //  TODO: Set access levels on parser functions
 //  TODO: comments must not require blank space after --
+//  TODO: formalize concrete syntax
 //
 //
 
+/// A parser for the Invocat language.
 class Parser {
 
     private var current = 0
     private var tokens: [Token] = []
 
+    /// Returns an array of Invocat expressions given an array of lexical
+    /// tokens.
     func parse(tokens: [Token]) -> [InvExp] {
         self.tokens = tokens
         var expressions: [InvExp] = []
 
-        stripNewlines()     // TODO: Should newlines ever be literals?
+        takeNewlines()     // TODO: Should newlines ever be literals?
 
         while current < tokens.count && !peek(.eof) {
             // As long as there's a token to examine, get a new expression
@@ -26,38 +30,45 @@ class Parser {
                 fatalError(errorText("Could not parse expression."))
             }
             expressions.append(exp)
-            stripNewlines()
+            takeNewlines()
         }
         return expressions
     }
 
-    func getToken(atIndex index: Int) -> Token? {
+    /// Returns the token at `index` or `nil` if the index is invalid.
+    func token(at index: Int? = nil) -> Token? {
+        let index = index ?? current
         return tokens.indices.contains(index) ? tokens[index] : nil
     }
-    
+
+    /// Consumes and returns the current token if it matches one of the provided
+    /// types.
+    ///
+    /// - Parameter types: A list of TokenTypes to match
     @discardableResult
-    // Consume and return the current token if it matches a provided type.
     func take(_ types: TokenType...) -> Token? {
         // If the current token's type matches one of the types provided,
         // consume and return the token.
-        if let token = getToken(atIndex: current), types.contains(token.type) {
+        if let token = token(at: current), types.contains(token.type) {
             current += 1
             return token
         }
         return nil
     }
 
-    // Return true if the current token (or the token at the specified index)
-    // matches any of the provided token types.
-    func peek(at index: Int? = nil, _ types: TokenType...) -> Bool {
-        let index = index ?? current
-        if let token = getToken(atIndex: index) {
+    /// Returns `true` if the current token matches any of the provided types.
+    func peek(_ types: TokenType...) -> Bool {
+        if let token = token(at: current) {
             return types.contains(token.type)
         }
         return false
     }
 
-    // Consume and return the next n tokens if they match the provided types.
+    /// Consumes and returns the next `n` tokens if they match the provided
+    /// types; returns `nil` otherwise.
+    ///
+    /// - Parameter types: A sequence of token types to match in order starting
+    ///   with the current token.
     func seq(_ types: TokenType...) -> [Token]? {
         let last = current + types.count
         if  last > tokens.count { return nil }
@@ -68,55 +79,86 @@ class Parser {
         return nil
     }
 
-    func stripNewlines() {
+    /// Consumes all consecutive newline tokens.
+    func takeNewlines() {
         while peek(.newline) { take(.newline) }
     }
 
+    /// Returns an Invocat expression or `nil` if an expression can't be
+    /// created from the current sequence of tokens.
+    ///
+    /// Tries to form an expression by testing each of the expression types
+    /// described in the abstract syntax.
     func expression() -> InvExp? {
-        return definition()           ??    // name :: list
-               selection()            ??    // name <- list
-               evaluatingDefinition() ??    // name :! list
-               evaluatingSelection()  ??    // name <! list
+        return definition()           ??    // name :: items
+               selection()            ??    // name <- items
+               evaluatingDefinition() ??    // name :! items
+               evaluatingSelection()  ??    // name <! items
                mix()                        // literal|reference|draw  mix
     }
-    
+
+    /// Returns a `.definition` expression or `nil` if the expression can't be
+    /// created from the current sequence of tokens.
+    ///
+    /// Definitions can be made with the `.define` operator or with special
+    /// table syntax. Invocat supports two table types.
     func definition() -> InvExp? {
-        // Definitions can use the define operator or one of the two table
-        // formats.
         if let def = table1() ?? table2() {
             return def
         }
         guard let name = seq(.name, .define)?.first else {
             return nil
         }
-        return InvExp.definition(name: name.lexeme, items: list())
+        return InvExp.definition(name: name.lexeme, items: items())
     }
-    
+
+    /// Returns a `.selection` expression or `nil` if the expression can't be
+    /// created from the current sequence of tokens.
+    ///
+    /// A selection begins with a `.name` followed by the `.select` operator and
+    /// a list of expressions.
     func selection() -> InvExp? {
         guard let name = seq(.name, .select)?.first else {
             return nil
         }
-        return InvExp.selection(name: name.lexeme, items: list())
+        return InvExp.selection(name: name.lexeme, items: items())
     }
-    
+
+    /// Returns an `.evaluatingDefinition` expression or `nil` if the expression
+    /// can't be created from the current sequence of tokens.
+    ///
+    /// An evaluatingDefinition begins with a `.name` followed by the `.defEval`
+    /// operator and a list of expressions.
     func evaluatingDefinition() -> InvExp? {
         guard let name = seq(.name, .defEval)?.first else {
             return nil
         }
-        return InvExp.evaluatingDefinition(name: name.lexeme, items: list())
+        return InvExp.evaluatingDefinition(name: name.lexeme, items: items())
     }
-    
+
+    /// Returns an `.evaluatingSelection` expression or `nil` if the expression
+    /// can't be created from the current sequence of tokens.
+    ///
+    /// An evaluatingSelection begins with a `.name` followed by the `.selEval`
+    /// operator and a list of expressions.
     func evaluatingSelection() -> InvExp? {
         guard let name = seq(.name, .selEval)?.first else {
             return nil
         }
-        return InvExp.evaluatingSelection(name: name.lexeme, items: list())
+        return InvExp.evaluatingSelection(name: name.lexeme, items: items())
     }
-    
+
+    /// Returns a `.reference`, `.draw`, `.literal`, or `.mix` expression; or
+    /// `nil` if the expression can't be created from the current sequence of
+    /// tokens.
+    ///
+    /// A mix combines one or more adjacent references, draws, and literals. If
+    /// `multiline` is true, the mix will combine expressions over multiple
+    /// lines.
+    ///
+    /// - Parameter multiline: Whether to allow the expressions to be combined
+    ///   to span multiple lines.
     func mix(multiline: Bool = false) -> InvExp? {
-        // A mix combines adjacent permutations of references, draws,
-        // and literals. If multiline is true, mixes can cover multiple lines
-        // and break at a rule1.
         guard var exp1 = reference() ?? draw() ?? literal() else {
             return nil
         }
@@ -134,26 +176,35 @@ class Parser {
         return InvExp.mix(item1: exp1, item2: exp2)
     }
 
+    /// Returns a `.reference` expression or `nil` if the expression can't be
+    /// created from the current sequence of tokens.
+    ///
+    /// A reference is a `.name` surrounded by parentheses: `(name)`
     func reference() -> InvExp? {
         // TODO: test failure on unclosed paren.
-        // A reference is a name surrounded by parens: (ref name)
         guard let name = seq(.lparen, .name, .rparen)?[1] else {
             return nil
         }
         return InvExp.reference(name: name.lexeme)
     }
-    
+
+    /// Returns a `.draw` expression or `nil` if the expression can't be
+    /// created from the current sequence of tokens.
+    ///
+    /// A draw is a `.name` surrounded by braces: `{name}`
     func draw() -> InvExp? {
-        // A draw is a name surrounded by braces: {ref name}
         guard let name = seq(.lbrace, .name, .rbrace)?[1] else {
             return nil
         }
         return InvExp.draw(name: name.lexeme)
     }
-    
+
+    /// Returns a `.literal` expression or `nil` if the expression can't be
+    /// created from the current sequence of tokens.
+    ///
+    /// A literal is a `.name`, `.number`, '.punctuation`, `.escape`, or
+    /// `.white`, optionally followed by another literal.
     func literal() -> InvExp? {
-        // A literal is a name, number, punctuation, escape, or whitespace 
-        // optionally followed by another literal.
         if !peek(.name, .number, .punct, .escape, .white) { return nil }
         
         var value: String = ""
@@ -164,49 +215,62 @@ class Parser {
         } while peek(.name, .number, .punct, .escape, .white)
         return InvExp.literal(literal: value)
     }
-    
-    func list() -> [InvExp] {
-        // Capture pipe-separated expressions
-        // TODO: Restrict to mixes? The abstract syntax allows any expression
-        // but that's probably not useful.
+
+    /// Captures a list of pipe-separated expressions and return them in an
+    /// array.
+    ///
+    /// - TODO: Restrict to mixes? The abstract syntax allows any expression
+    ///   but that's probably not useful.
+    /// - TODO: Generalize with sepToken, endSeq, errMsg to replace
+    ///   table1items() etc.
+    func items() -> [InvExp] {
         var exps: [InvExp] = []
         repeat {
             take(.pipe)
             guard let exp = expression() else {
-                fatalError(errorText("Expected expression parsing list."))
+                fatalError(errorText("Expected expression parsing items."))
             }
             exps.append(exp)
         } while peek(.pipe)
         return exps
     }
 
+    /// Returns a `.definition` expression or `nil` if the expression can't be
+    /// created from the current sequence of tokens.
+    ///
+    /// A table1 is a `.name`, `.newline`, and `.rule1`, followed by items on
+    /// consecutive lines.
     func table1() -> InvExp? {
-        // A name, newline, rule1 followed by a list on consecutive lines.
         guard let name = seq(.name, .newline, .rule1)?.first else {
             return nil
         }
         return InvExp.definition(name: name.lexeme, items: table1Items())
     }
 
+    /// Returns a `.definition` expression or `nil` if the expression can't be
+    /// created from the current sequence of tokens.
+    ///
+    /// A table2 is a `.name`, `.newline`, and `.rule2`, followed by a list of
+    /// rule1-separated items.
     func table2() -> InvExp? {
-        // A name, newline, rule2 followed by a list on consecutive lines.
         guard let name = seq(.name, .newline, .rule2)?.first else {
             return nil
         }
         return InvExp.definition(name: name.lexeme, items: table2Items())
     }
 
+    /// Captures a list of newline-separated expressions and returns them in an
+    /// array.
+    ///
+    /// Once you're in a table1 the only legal sequences are `.mix .newline`, or
+    /// `.newline .newline`. Two consecutive newlines terminate the list.
+    ///
+    ///     name
+    ///     --------
+    ///     option 1
+    ///     option 2
+    ///
     func table1Items() -> [InvExp] {
-        // Capture newline-separated expressions. Two consecutive newlines
-        // terminate the list. Once you're in a table1 the only legal sequences
-        // are mix newline, or newline newline.
-        // TODO: Generalize list with sepToken, endSeq, errMsg?
-        //
-        //  name
-        //  --------
-        //  option 1
-        //  option 2
-        //
         var exps: [InvExp] = []
         repeat {
             take(.newline)
@@ -218,18 +282,20 @@ class Parser {
         return exps
     }
 
+    /// Captures a list of rule1-separated expressions and returns them in an
+    /// array.
+    ///
+    /// Two consecutive newlines terminates the list.
+    ///
+    ///     name
+    ///     ==========
+    ///     multi-line
+    ///     expression
+    ///     ----------
+    ///     second opt
+    ///     ----------
+    ///
     func table2Items() -> [InvExp] {
-        // Capture rule1-separated expressions. Two consecutive newlines
-        // terminates the list.
-        //
-        //  name
-        //  ==========
-        //  multi-line
-        //  expression
-        //  ----------
-        //  second opt
-        //  ----------
-        //
         var exps: [InvExp] = []
         repeat {
             take(.newline)
@@ -247,10 +313,11 @@ class Parser {
         return exps
     }
 
-    // Provide info for error messages including the current token.
-    // TODO: More info. Unwrap optional.
+    /// Provides basic info for error messages including the current token.
+    ///
+    /// - TODO: Add more info. Unwrap the optional.
     func errorText(_ msg: String) -> String {
-        let token = String(describing: getToken(atIndex: current))
+        let token = String(describing: self.token(at: current))
         return "\(msg)\nCurrent token: \(String(describing: token))"
     }
 }
