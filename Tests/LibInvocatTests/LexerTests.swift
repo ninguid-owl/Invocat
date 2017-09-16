@@ -92,7 +92,7 @@ class LexerTests: XCTestCase {
 
         // Note .comment tokens are not emitted by the lexer
         text = "weapon :! sword | axe -- a comment"
-        expected = [.name, .defEval, .name, .pipe, .name, .white, .eof]
+        expected = [.name, .defEval, .name, .pipe, .name, .eof]
         checkTypes(text, expected)
 
         // Check rule1 and rule2
