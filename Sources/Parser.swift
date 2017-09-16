@@ -214,7 +214,7 @@ class Parser {
                 fatalError(errorText("Expected expression parsing table."))
             }
             exps.append(exp)
-        } while seq(.newline, .newline) == nil || seq(.eof) == nil
+        } while seq(.newline, .newline) == nil
         return exps
     }
 
@@ -243,7 +243,7 @@ class Parser {
             if take(.rule1) == nil {
                 fatalError(errorText("Expected rule1 separated list items"))
             }
-        } while seq(.newline, .newline) == nil || seq(.eof) == nil
+        } while seq(.newline, .newline) == nil
         return exps
     }
 
