@@ -18,6 +18,7 @@ class Parser {
     /// Returns an array of Invocat expressions given an array of lexical
     /// tokens.
     func parse(tokens: [Token]) -> [InvExp] {
+        self.current = 0
         self.tokens = tokens
         var expressions: [InvExp] = []
 
