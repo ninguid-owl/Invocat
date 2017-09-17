@@ -14,7 +14,7 @@ class InterpreterTests: XCTestCase {
         interpreter = Interpreter()
     }
 
-    func checkCases(_ cases: [(test: String, expected: String?)]) {
+    func check(_ cases: [(test: String, expected: String?)]) {
         for (test, expected) in cases {
             let result = interpreter.eval(text: test)?[0]
             XCTAssertEqual(result , expected,
@@ -29,7 +29,7 @@ class InterpreterTests: XCTestCase {
             ("the text -- a comment", "the text"),
             ("a dash--like this", "a dash--like this"),
         ]
-        checkCases(cases)
+        check(cases)
     }
 
     func testMultilines() {
@@ -44,7 +44,7 @@ class InterpreterTests: XCTestCase {
             ("(dragon murmurings)", "still having joy"),
             ("(dragon murmurings)", "the bloodline is not cut off"),
         ]
-        checkCases(cases)
+        check(cases)
     }
 
     // Enumerate tests for Linux

@@ -1,24 +1,32 @@
-import GameKit
-
-
-typealias InvState = [String: [InvExp]]
-
-// Abstract syntax
-
-// We follow the functional idea that everything is an expression.
-// This certainly cleans up the eval code, but the grammar then allows for
-// things like recursive definitions. The concrete syntax should not allow
-// that, however.
-// NOTE The .mix case could possibly be [InvExp] for efficiency.
-
-// TODO describe the operators ::, :!, <-, <!
-
-// Other possible expressions:
+//
+//  AbstractSyntax.swift
+//  LibInvocat
+//
+//  TODO: Describe the operators ::, :!, <-, <!
+//
+//  TODO: Other possible expressions:
 //   * Merge two lists
 //   * Append to a list
 //   * Duplicate a list
 //     ...
 
+import GameKit
+
+
+
+// Syntax, state, & semantics
+
+/// An Invocat state: a mapping of names to expressions.
+typealias InvState = [String: [InvExp]]
+
+/// Abstract syntax.
+///
+/// This follows the functional idea that everything is an expression.
+/// This certainly cleans up the eval code, but the grammar then allows for
+/// things like recursive definitions. The concrete syntax should not allow
+/// that, however.
+///
+/// NOTE: The .mix case could possibly be [InvExp] for efficiency.
 indirect enum InvExp {
     case definition           (name: String, items: [InvExp]) // ::
     case selection            (name: String, items: [InvExp]) // <-
@@ -30,49 +38,44 @@ indirect enum InvExp {
     case mix                  (item1: InvExp, item2: InvExp)
 }
 
-// Eval
-
+/// An evaluator for the Invocat language.
 class Evaluator {
+    /// Invocat semantics require random selection.
     let randomSource: GKRandomSource
     private var distributions: [Int: GKRandomDistribution] = [:] // Cache
 
-    init() {
-        let seed = "Today the furnace opens its mouth"
+    /// Initializes an Evaluator with a given random seed.
+    init(seed: String = "Today the furnace opens its mouth") {
         let seedData = Data(seed.utf8)
         randomSource = GKARC4RandomSource(seed: seedData)
     }
 
-    init(seed: String) {
-        let seed = seed
-        let seedData = Data(seed.utf8)
-        randomSource = GKARC4RandomSource(seed: seedData)
-    }
-
-    // Return random element from Array
+    /// Returns a random element from Array.
     private func randomElement<Element>(_ array: [Element]?) -> Element? {
         guard let array = array else { return nil }
         if array.isEmpty { return nil }
-        let distribution = distributionFrom0To(array.count-1)
+        let distribution = indicesDistribution(over: array.count)
         return array[distribution.nextInt()]
     }
 
-    // Return a distribution from 0 to highestValue using randomSource.
-    // The evaluator caches the distributions rather than regenerate them
-    // for each request.
-    private func distributionFrom0To(_ highestValue: Int) -> GKRandomDistribution {
-        if let distribution = self.distributions[highestValue] {
-            return distribution
-        }
+    /// Return a distribution over the indices of an Array containing `count`
+    /// elements using `self.randomSource`.
+    ///
+    /// The evaluator caches these distributions rather than regenerate them
+    /// for each request.
+    private func indicesDistribution(over count: Int) -> GKRandomDistribution {
+        if let distribution = self.distributions[count] { return distribution }
         let distribution = GKRandomDistribution(randomSource: randomSource,
                                                 lowestValue: 0,
-                                                highestValue: highestValue)
-        self.distributions[highestValue] = distribution
+                                                highestValue: count-1)
+        self.distributions[count] = distribution
         return distribution
     }
 
-    // NOTE Functional approach: eval takes (expression, state) and
-    // returns (state, value). This may eventually need to be optimized because
-    // it is definitely not efficient.
+    /// Evaluates an expression in a state, returning a new state and a value.
+    ///
+    /// Functional approach: eval (expression, state) -> (state, value).
+    /// This may eventually need to be optimized because it is not efficient.
     func eval(_ exp: InvExp?, in state: InvState) -> (state: InvState, value: String?) {
         guard let exp = exp else { return (state, nil) }
         var newState = state
@@ -81,9 +84,7 @@ class Evaluator {
         case let .definition(name, items):
             newState[name] = items
         case let .selection(name, items):
-            if let item = randomElement(items) {
-                newState[name] = [item]
-            }
+            if let item = randomElement(items) { newState[name] = [item] }
         case let .evaluatingDefinition(name, items):
             var newItems: [InvExp] = []
             for item in items {
@@ -125,7 +126,6 @@ class Evaluator {
 // Extensions & operators
 
 // Operators
-// TODO move to test??
 prefix operator ^   // literal
 prefix operator *   // reference
 prefix operator %   // draw
