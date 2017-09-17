@@ -99,6 +99,11 @@ class LexerTests: XCTestCase {
         text = "-----------\n==========="
         expected = [.rule1, .newline, .rule2, .eof]
         checkTypes(text, expected)
+
+        // Comments are single-line only and eat leading whitespace
+        text = "  -- " + "\nsomething here"
+        expected = [.newline, .name, .eof]
+        checkTypes(text, expected)
     }
 
     func testNumbers() {

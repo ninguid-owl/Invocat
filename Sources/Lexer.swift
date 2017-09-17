@@ -33,7 +33,8 @@ enum TokenType: String {
     case select  = "[\\p{Blank}]*[<][-][\\p{Blank}]*"   // <-
     case selEval = "[\\p{Blank}]*[<][!][\\p{Blank}]*"   // <!
     
-    case comment = "\\s*[-]{2}\\s+.*"       // consume white before comments
+
+    case comment = "\\p{Blank}*[-]{2}\\p{Blank}+.*"
     case rule1   = "[-]{3,}.*"              // TODO: consume newlines?
     case rule2   = "[=]{3,}.*"
 
