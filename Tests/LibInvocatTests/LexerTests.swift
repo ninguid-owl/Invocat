@@ -80,6 +80,11 @@ class LexerTests: XCTestCase {
         expected = [.name, .name, .eof]
         checkTypes(text, expected)
 
+        // Check trailing space is preserverd with split
+        text = "a long line      \\" + "\na continuation"
+        expected = [.name, .white, .name,.eof]
+        checkTypes(text, expected)
+
         // Check escaping backslash
         text = "escape a backslash \\\\"
         expected = [.name, .white, .escape, .eof]
