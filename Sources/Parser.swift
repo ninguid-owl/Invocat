@@ -184,7 +184,8 @@ class Parser {
 
         // Return exp1 if at a terminator token, eof, or newline.
         if let _ = take(terminator) {
-            take(.newline)           // .rule1 is always followed by .newline
+            // .rule1 is always followed by .newline
+            if terminator == .rule1 { take(.newline) }
             return exp1
         }
         if peek(.eof, .newline) {

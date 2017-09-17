@@ -7,7 +7,6 @@
 import XCTest
 @testable import LibInvocat
 
-
 class ParserTests: XCTestCase {
 
     let parser: Parser = Parser()
@@ -77,6 +76,19 @@ class ParserTests: XCTestCase {
         let expected: [InvExp] = [.definition("name", table1items)]
         let tokens = Lexer.tokens(from: text)
         let exps = parser.parse(tokens: tokens)
+        XCTAssertEqual(exps, expected)
+    }
+
+    func testTable1End() {
+        let text = "name\n" +
+                   "----\n" +
+                   "opt1\n" +
+                   "\n"     +
+                   "not in table"
+        let table1: InvExp = .definition("name", [.literal("opt1")])
+        let expected: [InvExp] = [table1, .literal("not in table")]
+        let tokens = Lexer.tokens(from: text)
+        let exps = parser.parse(tokens: tokens)
         exps.forEach{ print($0) }
         XCTAssertEqual(exps, expected)
     }
@@ -95,7 +107,6 @@ class ParserTests: XCTestCase {
         let expected: [InvExp] = [.definition("name", table2items)]
         let tokens = Lexer.tokens(from: text)
         let exps = parser.parse(tokens: tokens)
-        exps.forEach{ print($0) }
         XCTAssertEqual(exps, expected)
     }
 }
