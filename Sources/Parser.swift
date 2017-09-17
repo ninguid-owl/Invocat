@@ -123,7 +123,7 @@ class Parser {
         guard let name = seq(.name, .define)?.first else {
             return nil
         }
-        return InvExp.definition(name: name.lexeme, items: items())
+        return InvExp.definition(name.lexeme, items())
     }
 
     /// Returns a `.selection` expression or `nil` if the expression can't be
@@ -135,7 +135,7 @@ class Parser {
         guard let name = seq(.name, .select)?.first else {
             return nil
         }
-        return InvExp.selection(name: name.lexeme, items: items())
+        return InvExp.selection(name.lexeme, items())
     }
 
     /// Returns an `.evaluatingDefinition` expression or `nil` if the expression
@@ -147,7 +147,7 @@ class Parser {
         guard let name = seq(.name, .defEval)?.first else {
             return nil
         }
-        return InvExp.evaluatingDefinition(name: name.lexeme, items: items())
+        return InvExp.evaluatingDefinition(name.lexeme, items())
     }
 
     /// Returns an `.evaluatingSelection` expression or `nil` if the expression
@@ -159,7 +159,7 @@ class Parser {
         guard let name = seq(.name, .selEval)?.first else {
             return nil
         }
-        return InvExp.evaluatingSelection(name: name.lexeme, items: items())
+        return InvExp.evaluatingSelection(name.lexeme, items())
     }
 
     /// Returns a `.reference`, `.draw`, `.literal`, or `.mix` expression; or
@@ -181,8 +181,7 @@ class Parser {
             // rule1. Otherwise, join consecutive lines with a single space.
             if seq(.newline, .rule1, .newline) != nil { return exp1 }
             let separator = take(.newline) != nil ? " " : ""
-            exp1 = InvExp.mix(item1: exp1,
-                              item2: InvExp.literal(literal: separator))
+            exp1 = InvExp.mix(exp1, InvExp.literal(separator))
         }
         else if peek(.newline, .eof) || take(.pipe) != nil {
             return exp1
@@ -190,7 +189,7 @@ class Parser {
         guard let exp2 = mix(multiline: multiline) else {
             fatalError(errorText("Expected second expression in mix."))
         }
-        return InvExp.mix(item1: exp1, item2: exp2)
+        return InvExp.mix(exp1, exp2)
     }
 
     /// Returns a `.reference` expression or `nil` if the expression can't be
@@ -202,7 +201,7 @@ class Parser {
         guard let name = seq(.lparen, .name, .rparen)?[1] else {
             return nil
         }
-        return InvExp.reference(name: name.lexeme)
+        return InvExp.reference(name.lexeme)
     }
 
     /// Returns a `.draw` expression or `nil` if the expression can't be
@@ -213,7 +212,7 @@ class Parser {
         guard let name = seq(.lbrace, .name, .rbrace)?[1] else {
             return nil
         }
-        return InvExp.draw(name: name.lexeme)
+        return InvExp.draw(name.lexeme)
     }
 
     /// Returns a `.literal` expression or `nil` if the expression can't be
@@ -231,7 +230,7 @@ class Parser {
                 value = value.appending(token.lexeme)
             }
         } while peek(types)
-        return InvExp.literal(literal: value)
+        return InvExp.literal(value)
     }
 
     /// Captures a list of expressions and return them in an array.
@@ -268,7 +267,7 @@ class Parser {
         guard let name = seq(.name, .newline, .rule1, .newline)?.first else {
             return nil
         }
-        return InvExp.definition(name: name.lexeme, items: items())
+        return InvExp.definition(name.lexeme, items())
     }
 
     /// Returns a `.definition` expression or `nil` if the expression can't be
@@ -292,7 +291,7 @@ class Parser {
             return nil
         }
         let items = self.items(multiline: true)
-        return InvExp.definition(name: name.lexeme, items: items)
+        return InvExp.definition(name.lexeme, items)
     }
 
     /// Provides basic info for error messages including the current token.

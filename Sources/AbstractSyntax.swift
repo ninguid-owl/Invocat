@@ -28,14 +28,14 @@ typealias InvState = [String: [InvExp]]
 ///
 /// NOTE: The .mix case could possibly be [InvExp] for efficiency.
 indirect enum InvExp {
-    case definition           (name: String, items: [InvExp]) // ::
-    case selection            (name: String, items: [InvExp]) // <-
-    case evaluatingDefinition (name: String, items: [InvExp]) // :!
-    case evaluatingSelection  (name: String, items: [InvExp]) // <!
-    case reference            (name: String)                  // ()
-    case draw                 (name: String)                  // {}
-    case literal              (literal: String)
-    case mix                  (item1: InvExp, item2: InvExp)
+    case definition           (String, [InvExp]) // (name, items) // ::
+    case selection            (String, [InvExp]) // (name, items) // <-
+    case evaluatingDefinition (String, [InvExp]) // (name, items) // :!
+    case evaluatingSelection  (String, [InvExp]) // (name, items) // <!
+    case reference            (String)           // (name)        // ()
+    case draw                 (String)           // (name)        // {}
+    case literal              (String)           // (literal)
+    case mix                  (InvExp, InvExp)   // (item1, item2)
 }
 
 /// An evaluator for the Invocat language.
@@ -91,7 +91,7 @@ class Evaluator {
                 let itemValue: String?
                 (newState, itemValue) = eval(item, in: newState)
                 if let itemValue = itemValue {
-                    newItems.append(.literal(literal: itemValue))
+                    newItems.append(.literal(itemValue))
                 }
             }
             newState[name] = newItems
@@ -100,7 +100,7 @@ class Evaluator {
                 let itemValue: String?
                 (newState, itemValue) = eval(item, in: newState)
                 if let itemValue = itemValue {
-                    newState[name] = [.literal(literal: itemValue)]
+                    newState[name] = [.literal(itemValue)]
                 }
             }
         case let .reference(name):
@@ -138,26 +138,26 @@ infix operator ~!   // evaluatingSelection
 // ... literal, reference, draw, definition, selection,
 // evaluatingDefinition, evaluatingSelection
 extension String {
-    static prefix func ^ (right: String) -> InvExp { return InvExp.literal(literal: right) }
-    static prefix func * (right: String) -> InvExp { return InvExp.reference(name: right) }
-    static prefix func % (right: String) -> InvExp { return InvExp.draw(name: right) }
+    static prefix func ^ (right: String) -> InvExp { return InvExp.literal(right) }
+    static prefix func * (right: String) -> InvExp { return InvExp.reference(right) }
+    static prefix func % (right: String) -> InvExp { return InvExp.draw(right) }
     static func * (left: String, right: [InvExp]) -> InvExp {
-        return InvExp.definition(name: left, items: right)
+        return InvExp.definition(left, right)
     }
     static func ~ (left: String, right: [InvExp]) -> InvExp {
-        return InvExp.selection(name: left, items: right)
+        return InvExp.selection(left, right)
     }
     static func *! (left: String, right: [InvExp]) -> InvExp {
-        return InvExp.evaluatingDefinition(name: left, items: right)
+        return InvExp.evaluatingDefinition(left, right)
     }
     static func ~! (left: String, right: [InvExp]) -> InvExp {
-        return InvExp.evaluatingSelection(name: left, items: right)
+        return InvExp.evaluatingSelection(left, right)
     }
 }
 // ... mix
 extension InvExp {
     static func + (left: InvExp, right: InvExp) -> InvExp {
-        return InvExp.mix(item1: left, item2: right)
+        return InvExp.mix(left, right)
     }
 }
 
@@ -197,13 +197,13 @@ extension InvExp: ExpressibleByStringLiteral,
                   ExpressibleByExtendedGraphemeClusterLiteral,
                   ExpressibleByUnicodeScalarLiteral {
     init(stringLiteral value: String) {
-        self = InvExp.literal(literal: value)
+        self = InvExp.literal(value)
     }
     init(extendedGraphemeClusterLiteral value: String) {
-        self = InvExp.literal(literal: value)
+        self = InvExp.literal(value)
     }
     init(unicodeScalarLiteral value: String) {
-        self = InvExp.literal(literal: value)
+        self = InvExp.literal(value)
     }
 }
 

@@ -21,33 +21,33 @@ class AbstractSyntaxTests: XCTestCase {
     let val_a = "a"
     let val_b = "b"
 
-    var lit_moon: InvExp { return .literal(literal: val_moon) }
-    var lit_iad: InvExp { return .literal(literal: val_iad) }
-    var lit_stars: InvExp { return .literal(literal: val_stars) }
-    var lit_dot: InvExp { return .literal(literal: val_dot) }
-    var lit_mooniaddot: InvExp { return .literal(literal: val_mooniaddot) }
+    var lit_moon: InvExp { return .literal(val_moon) }
+    var lit_iad: InvExp { return .literal(val_iad) }
+    var lit_stars: InvExp { return .literal(val_stars) }
+    var lit_dot: InvExp { return .literal(val_dot) }
+    var lit_mooniaddot: InvExp { return .literal(val_mooniaddot) }
 
-    var ref_x: InvExp { return .reference(name: val_x) }
-    var ref_y: InvExp { return .reference(name: val_y) }
-    var ref_a: InvExp { return .reference(name: val_a) }
+    var ref_x: InvExp { return .reference(val_x) }
+    var ref_y: InvExp { return .reference(val_y) }
+    var ref_a: InvExp { return .reference(val_a) }
 
-    var mix_mooniad: InvExp { return .mix(item1: lit_moon, item2: lit_iad) }
-    var mix_mooniaddot: InvExp { return .mix(item1: mix_mooniad, item2: lit_dot) }
+    var mix_mooniad: InvExp { return .mix(lit_moon, lit_iad) }
+    var mix_mooniaddot: InvExp { return .mix(mix_mooniad, lit_dot) }
 
-    var def_x1: InvExp { return .definition(name: val_x, items: [lit_moon]) }
-    var def_x2: InvExp { return .definition(name: val_x, items: [lit_moon, lit_stars]) }
-    var def_y: InvExp { return .definition(name: val_y, items: [mix_mooniad, ref_x]) }
+    var def_x1: InvExp { return .definition(val_x, [lit_moon]) }
+    var def_x2: InvExp { return .definition(val_x, [lit_moon, lit_stars]) }
+    var def_y: InvExp { return .definition(val_y, [mix_mooniad, ref_x]) }
 
-    var evd_a: InvExp { return .evaluatingDefinition(name: val_a, items: [lit_moon, lit_stars]) }
-    var evd_b: InvExp { return .evaluatingDefinition(name: val_b, items: [mix_mooniaddot, ref_a]) }
+    var evd_a: InvExp { return .evaluatingDefinition(val_a, [lit_moon, lit_stars]) }
+    var evd_b: InvExp { return .evaluatingDefinition(val_b, [mix_mooniaddot, ref_a]) }
 
-    var sel_x1: InvExp { return .selection(name: val_x, items: [lit_moon]) }
-    var sel_x3: InvExp { return .selection(name: val_x, items: [mix_mooniaddot, ref_a]) }
+    var sel_x1: InvExp { return .selection(val_x, [lit_moon]) }
+    var sel_x3: InvExp { return .selection(val_x, [mix_mooniaddot, ref_a]) }
 
-    var evs_x1: InvExp { return .evaluatingSelection(name: val_x, items: [lit_moon]) }
-    var evs_x4: InvExp { return .evaluatingSelection(name: val_x, items: [mix_mooniaddot, ref_a]) }
+    var evs_x1: InvExp { return .evaluatingSelection(val_x, [lit_moon]) }
+    var evs_x4: InvExp { return .evaluatingSelection(val_x, [mix_mooniaddot, ref_a]) }
 
-    var drw_x2: InvExp { return .draw(name: val_x) }
+    var drw_x2: InvExp { return .draw(val_x) }
 
     var env0: InvState = [:]
     var env_x1: InvState { return [val_x: [lit_moon]] }
