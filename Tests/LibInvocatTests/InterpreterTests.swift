@@ -32,9 +32,24 @@ class InterpreterTests: XCTestCase {
         checkCases(cases)
     }
 
-    // TODO ------------------------------------------------------------------------
+    func testMultilines() {
+        let cases: [(test: String, expected: String?)] = [
+            ("dragon murmurings   \n" +
+             "=================   \n" +
+             "still having joy    \n" +
+             "-----------------   \n" +
+             "the bloodline       \n" +
+             "is not cut off      \n" +
+             "-----------------   \n", nil),
+            ("(dragon murmurings)", "still having joy"),
+            ("(dragon murmurings)", "the bloodline is not cut off"),
+        ]
+        checkCases(cases)
+    }
+
     // Enumerate tests for Linux
     static var allTests = [
         ("testComments", testComments),
+        ("testMultilines", testMultilines)
     ]
 }
