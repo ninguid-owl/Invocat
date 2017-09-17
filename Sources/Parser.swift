@@ -21,16 +21,15 @@ class Parser {
         self.tokens = tokens
         var expressions: [InvExp] = []
 
-        takeNewlines()     // TODO: Should newlines ever be literals?
-
-        while current < tokens.count && !peek(.eof) {
-            // As long as there's a token to examine, get a new expression
-            // and consume all following newlines.
+        // As long as there's a token to examine, consume newlines and try to
+        // get a new expression.
+        while current < tokens.count {
+            takeNewlines()
+            if peek(.eof) { break }
             guard let exp = expression() else {
                 fatalError(errorText("Could not parse expression."))
             }
             expressions.append(exp)
-            takeNewlines()
         }
         return expressions
     }
@@ -44,11 +43,16 @@ class Parser {
     /// Consumes and returns the current token if it matches one of the provided
     /// types.
     ///
-    /// - Parameter types: A list of TokenTypes to match
+    /// - Parameter types: A list of TokenTypes to match.
     @discardableResult
-    func take(_ types: TokenType...) -> Token? {
-        // If the current token's type matches one of the types provided,
-        // consume and return the token.
+    func take(_ types: TokenType...) -> Token? { return take(types) }
+
+    /// Consumes and returns the current token if it matches one of the provided
+    /// types.
+    ///
+    /// - Parameter types: An array of TokenTypes to match.
+    @discardableResult
+    func take(_ types: [TokenType]) -> Token? {
         if let token = token(at: current), types.contains(token.type) {
             current += 1
             return token
@@ -57,7 +61,10 @@ class Parser {
     }
 
     /// Returns `true` if the current token matches any of the provided types.
-    func peek(_ types: TokenType...) -> Bool {
+    func peek(_ types: TokenType...) -> Bool { return peek(types) }
+
+    /// Returns `true` if the current token matches any of the provided types.
+    func peek(_ types: [TokenType]) -> Bool {
         if let token = token(at: current) {
             return types.contains(token.type)
         }
@@ -67,9 +74,16 @@ class Parser {
     /// Consumes and returns the next `n` tokens if they match the provided
     /// types; returns `nil` otherwise.
     ///
+    /// - Parameter types: An array of token types to match in order starting
+    ///   with the current token.
+    func seq(_ types: TokenType...) -> [Token]? { return seq(types) }
+
+    /// Consumes and returns the next `n` tokens if they match the provided
+    /// types; returns `nil` otherwise.
+    ///
     /// - Parameter types: A sequence of token types to match in order starting
     ///   with the current token.
-    func seq(_ types: TokenType...) -> [Token]? {
+    func seq(_ types: [TokenType]) -> [Token]? {
         let last = current + types.count
         if  last > tokens.count { return nil }
         let actual = tokens[current..<last].map{ $0.type }
@@ -165,11 +179,14 @@ class Parser {
         if multiline {
             // If we're matching multiline expressions, bail when we see a
             // rule1. Otherwise, join consecutive lines with a single space.
+            if seq(.newline, .rule1, .newline) != nil { return exp1 }
             let separator = take(.newline) != nil ? " " : ""
-            if peek(.rule1) { return exp1 }
-            exp1 = InvExp.mix(item1: exp1, item2: InvExp.literal(literal: separator))
+            exp1 = InvExp.mix(item1: exp1,
+                              item2: InvExp.literal(literal: separator))
         }
-        else if peek(.newline, .pipe, .eof) { return exp1 }
+        else if peek(.newline, .eof) || take(.pipe) != nil {
+            return exp1
+        }
         guard let exp2 = mix(multiline: multiline) else {
             fatalError(errorText("Expected second expression in mix."))
         }
@@ -205,33 +222,31 @@ class Parser {
     /// A literal is a `.name`, `.number`, '.punctuation`, `.escape`, or
     /// `.white`, optionally followed by another literal.
     func literal() -> InvExp? {
-        if !peek(.name, .number, .punct, .escape, .white) { return nil }
+        let types: [TokenType] = [.name, .number, .punct, .escape, .white]
+        if !peek(types) { return nil }
         
         var value: String = ""
         repeat {
-            if let token = take(.name, .number, .punct, .escape, .white) {
+            if let token = take(types) {
                 value = value.appending(token.lexeme)
             }
-        } while peek(.name, .number, .punct, .escape, .white)
+        } while peek(types)
         return InvExp.literal(literal: value)
     }
 
-    /// Captures a list of pipe-separated expressions and return them in an
-    /// array.
+    /// Captures a list of expressions and return them in an array.
     ///
-    /// - TODO: Restrict to mixes? The abstract syntax allows any expression
-    ///   but that's probably not useful.
+    /// - Parameter multiline: Whether items can be made over multiple lines.
     /// - TODO: Generalize with sepToken, endSeq, errMsg to replace
     ///   table1items() etc.
-    func items() -> [InvExp] {
+    func items(multiline: Bool = false) -> [InvExp] {
         var exps: [InvExp] = []
         repeat {
-            take(.pipe)
-            guard let exp = expression() else {
+            guard let exp = mix(multiline: multiline) else {
                 fatalError(errorText("Expected expression parsing items."))
             }
             exps.append(exp)
-        } while peek(.pipe)
+        } while take(.newline, .eof) == nil  // Repeat until newline or eof
         return exps
     }
 
@@ -240,29 +255,8 @@ class Parser {
     ///
     /// A table1 is a `.name`, `.newline`, and `.rule1`, followed by items on
     /// consecutive lines.
-    func table1() -> InvExp? {
-        guard let name = seq(.name, .newline, .rule1)?.first else {
-            return nil
-        }
-        return InvExp.definition(name: name.lexeme, items: table1Items())
-    }
-
-    /// Returns a `.definition` expression or `nil` if the expression can't be
-    /// created from the current sequence of tokens.
     ///
-    /// A table2 is a `.name`, `.newline`, and `.rule2`, followed by a list of
-    /// rule1-separated items.
-    func table2() -> InvExp? {
-        guard let name = seq(.name, .newline, .rule2)?.first else {
-            return nil
-        }
-        return InvExp.definition(name: name.lexeme, items: table2Items())
-    }
-
-    /// Captures a list of newline-separated expressions and returns them in an
-    /// array.
-    ///
-    /// Once you're in a table1 the only legal sequences are `.mix .newline`, or
+    /// Inside a table1 the only legal sequences are `item .newline`, or
     /// `.newline .newline`. Two consecutive newlines terminate the list.
     ///
     ///     name
@@ -270,20 +264,18 @@ class Parser {
     ///     option 1
     ///     option 2
     ///
-    func table1Items() -> [InvExp] {
-        var exps: [InvExp] = []
-        repeat {
-            take(.newline)
-            guard let exp = mix() else {
-                fatalError(errorText("Expected expression parsing table."))
-            }
-            exps.append(exp)
-        } while seq(.newline, .newline) == nil
-        return exps
+    func table1() -> InvExp? {
+        guard let name = seq(.name, .newline, .rule1, .newline)?.first else {
+            return nil
+        }
+        return InvExp.definition(name: name.lexeme, items: items())
     }
 
-    /// Captures a list of rule1-separated expressions and returns them in an
-    /// array.
+    /// Returns a `.definition` expression or `nil` if the expression can't be
+    /// created from the current sequence of tokens.
+    ///
+    /// A table2 is a `.name`, `.newline`, and `.rule2`, followed by a list of
+    /// rule1-separated items.
     ///
     /// Two consecutive newlines terminates the list.
     ///
@@ -295,22 +287,12 @@ class Parser {
     ///     second opt
     ///     ----------
     ///
-    func table2Items() -> [InvExp] {
-        var exps: [InvExp] = []
-        repeat {
-            take(.newline)
-            guard let exp = mix(multiline: true) else {
-                // We need at least one mix expression in the table.
-                fatalError(errorText("Expected list item parsing table2"))
-            }
-            exps.append(exp)
-
-            // After the expression we need a rule1.
-            if take(.rule1) == nil {
-                fatalError(errorText("Expected rule1 separated list items"))
-            }
-        } while seq(.newline, .newline) == nil
-        return exps
+    func table2() -> InvExp? {
+        guard let name = seq(.name, .newline, .rule2, .newline)?.first else {
+            return nil
+        }
+        let items = self.items(multiline: true)
+        return InvExp.definition(name: name.lexeme, items: items)
     }
 
     /// Provides basic info for error messages including the current token.
