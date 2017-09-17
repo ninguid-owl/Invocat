@@ -166,27 +166,32 @@ class Parser {
     /// `nil` if the expression can't be created from the current sequence of
     /// tokens.
     ///
-    /// A mix combines one or more adjacent references, draws, and literals. If
-    /// `multiline` is true, the mix will combine expressions over multiple
-    /// lines.
+    /// A mix combines one or more adjacent references, draws, and literals,
+    /// terminating at `separator`.
     ///
-    /// - Parameter multiline: Whether to allow the expressions to be combined
-    ///   to span multiple lines.
-    func mix(multiline: Bool = false) -> InvExp? {
+    /// - Parameter terminator: The token type on which to end the mix.
+    func mix(terminatedBy terminator: TokenType = .pipe) -> InvExp? {
         guard var exp1 = reference() ?? draw() ?? literal() else {
             return nil
         }
-        if multiline {
-            // If we're matching multiline expressions, bail when we see a
-            // rule1. Otherwise, join consecutive lines with a single space.
-            if seq(.newline, .rule1, .newline) != nil { return exp1 }
-            let separator = take(.newline) != nil ? " " : ""
-            exp1 = InvExp.mix(exp1, InvExp.literal(separator))
+
+        // If the separator is rule1, attempt to conusme a newline and if the
+        // next token isn't the separator, join the next expression with a
+        // space.
+        if terminator == .rule1, let _ = take(.newline), !peek(terminator) {
+            exp1 = InvExp.mix(exp1, InvExp.literal(" "))
         }
-        else if peek(.newline, .eof) || take(.pipe) != nil {
+
+        // Return exp1 if at a terminator token, eof, or newline.
+        if let _ = take(terminator) {
+            take(.newline)           // .rule1 is always followed by .newline
             return exp1
         }
-        guard let exp2 = mix(multiline: multiline) else {
+        if peek(.eof, .newline) {
+            return exp1
+        }
+
+        guard let exp2 = mix(terminatedBy: terminator) else {
             fatalError(errorText("Expected second expression in mix."))
         }
         return InvExp.mix(exp1, exp2)
@@ -235,13 +240,12 @@ class Parser {
 
     /// Captures a list of expressions and return them in an array.
     ///
-    /// - Parameter multiline: Whether items can be made over multiple lines.
-    /// - TODO: Generalize with sepToken, endSeq, errMsg to replace
-    ///   table1items() etc.
-    func items(multiline: Bool = false) -> [InvExp] {
+    /// - Parameter separatedBy: The `TokenType` expected between each
+    ///   expression. The default is `.pipe`.
+    func items(separatedBy separator: TokenType = .pipe) -> [InvExp] {
         var exps: [InvExp] = []
         repeat {
-            guard let exp = mix(multiline: multiline) else {
+            guard let exp = mix(terminatedBy: separator) else {
                 fatalError(errorText("Expected expression parsing items."))
             }
             exps.append(exp)
@@ -267,7 +271,7 @@ class Parser {
         guard let name = seq(.name, .newline, .rule1, .newline)?.first else {
             return nil
         }
-        return InvExp.definition(name.lexeme, items())
+        return InvExp.definition(name.lexeme, items(separatedBy: .newline))
     }
 
     /// Returns a `.definition` expression or `nil` if the expression can't be
@@ -290,7 +294,7 @@ class Parser {
         guard let name = seq(.name, .newline, .rule2, .newline)?.first else {
             return nil
         }
-        let items = self.items(multiline: true)
+        let items = self.items(separatedBy: .rule1)
         return InvExp.definition(name.lexeme, items)
     }
 
