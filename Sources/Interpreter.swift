@@ -21,8 +21,8 @@ class Interpreter {
             let value: String?
             (self.state, value) = evaluator.eval(exp, in: self.state)
             return value
-        }
-        return values.flatMap({$0})
+        }.flatMap({$0})
+        return values.isEmpty ? nil : values
     }
 
     func eval(text: String) -> [String]? {
