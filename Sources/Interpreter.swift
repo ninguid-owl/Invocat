@@ -17,11 +17,11 @@ class Interpreter {
     // TODO Test
     // NOTE side effects: updates state!
     private func evaluate(_ exps: [InvExp]) -> [String]? {
-        let values = exps.map { (exp: InvExp) -> String? in
+        let values = exps.flatMap { (exp: InvExp) -> String? in
             let value: String?
             (self.state, value) = evaluator.eval(exp, in: self.state)
             return value
-        }.flatMap({$0})
+        }
         return values.isEmpty ? nil : values
     }
 
