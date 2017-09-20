@@ -70,6 +70,17 @@ class InterpreterTests: XCTestCase {
              "-------------------   \n", nil),
             ("(eyeballs in a skull)", "not dried up"),
             ("(eyeballs in a skull)", "still having consciousness"),
+            // Whitespace is not consumed in the middle of a mix.
+            ("""
+             season :: fall | winter | spring | summer
+             d4  memory
+             =================
+             1  that (season),
+                it disappeared.
+             -----------------
+
+             (memory)
+             """, "that summer, it disappeared.")
         ]
         check(cases)
     }

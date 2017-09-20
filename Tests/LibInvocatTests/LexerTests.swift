@@ -193,26 +193,40 @@ class LexerTests: XCTestCase {
 
     func testWeights() {
         var text: String
-        var expected: [TokenType]
+        var expectedTypes: [TokenType]
+        var expectedLexemes: [String]
 
         // A weight is a number or range followed by at least 2 spaces ...
         text = "1    2 silver coins"
-        expected = [.weight, .number, .white, .name, .eof]
-        checkTypes(text, expected)
+        expectedTypes = [.weight, .number, .white, .name, .eof]
+        checkTypes(text, expectedTypes)
 
         text = "2-6  knotted threads"
-        expected = [.weight, .name, .eof]
-        checkTypes(text, expected)
+        expectedTypes = [.weight, .name, .eof]
+        checkTypes(text, expectedTypes)
 
         // ... or a space and a punctuation mark.
         text = "1 - 2 silver coins"
-        expected = [.weight, .number, .white, .name, .eof]
-        checkTypes(text, expected)
+        expectedTypes = [.weight, .number, .white, .name, .eof]
+        checkTypes(text, expectedTypes)
 
         // This is a number.
         text = "1 time"
-        expected = [.number, .white, .name, .eof]
-        checkTypes(text, expected)
+        expectedTypes = [.number, .white, .name, .eof]
+        checkTypes(text, expectedTypes)
+
+        // Check that .weight lexemes are properly trimmed.
+        text = "1  "
+        expectedTypes = [.weight, .eof]
+        expectedLexemes = ["1", ""]
+        checkTypes(text, expectedTypes)
+        checkLexemes(text, expectedLexemes)
+
+        text = "2-20 / "
+        expectedTypes = [.weight, .eof]
+        expectedLexemes = ["2-20", ""]
+        checkTypes(text, expectedTypes)
+        checkLexemes(text, expectedLexemes)
     }
 
     // Enumerate tests for Linux

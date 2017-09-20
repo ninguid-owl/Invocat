@@ -159,6 +159,10 @@ struct Lexer {
                 lex = escapes[lex] ?? lex
             case .pipe, .define, .defEval, .select, .selEval:
                 lex = lex.trimmingCharacters(in: .whitespaces)
+            case .weight:
+                lex = lex.trimmingCharacters(in: .whitespaces)
+                         .trimmingCharacters(in: .punctuationCharacters)
+                         .trimmingCharacters(in: .whitespaces)
             default: break
             }
 
