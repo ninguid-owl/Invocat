@@ -6,6 +6,37 @@
 
 typealias Bounds = Range<String.Index>
 
+/// The types of weighting for items in a definition.
+///
+/// The weighting is always over a uniform distribution.
+/// - `die`: Isolated numbers are weighted as 1; ranges are weighted as the
+///   magnitude of the range.
+/// - `frequency`: Isolated numbers are weighted as the magnitude of the number;
+///   ranges are not significant.
+enum WeightType {
+    case die
+    case frequency
+
+    /// Returns the magnitude of the weight described by an optional weight
+    /// token.
+    ///
+    /// The magnitude is calculated according to the WeightType based on whether
+    /// the token describes a range or an isolated number.
+    func magnitude(token: Token?) -> Int {
+        guard let token = token else { return 1 }
+        guard token.type == .weight else { return 1 }
+        switch self {
+        case .die:
+            // TODO: parse die weight
+            break
+        case .frequency:
+            // TODO: parse frequency weight
+            break
+        }
+        return 1
+    }
+}
+
 /// The types of tokens emitted by the lexer.
 ///
 /// The `rawValue` of each case is a regex that defines the allowable lexemes
@@ -18,6 +49,13 @@ enum TokenType: String {
     // Names are one or more alphanumeric characters and some symbols
     // with spaces between. They cannot end with a space.
     // Names include numbers so check for number first.
+    // dN is die notation for long form defintions. It must be followed
+    // by either at least two spaces or a space and a punctuation mark,
+    // e.g., "d6  ", "d10 / ".
+    // A weight is a number or range followed by either at least two spaces or
+    // a space and a punctuation mark, e.g., "1 -", "2-6  ".
+    case dN      = "[d][\\d]+[\\p{Blank}][\\p{blank}\\p{Punctuation}][\\p{Blank}]*"
+    case weight  = "[\\d]+([-][\\d]+)?[\\p{Blank}][\\p{blank}\\p{Punctuation}][\\p{Blank}]*"
     case number  = "[\\d]+"
     case name    = "[\\w_!'?.,;]+( +[\\w_!'?.,;]+)*"
     
@@ -48,7 +86,7 @@ enum TokenType: String {
 
     /// Provides a way to iterate over the cases to be tested in order.
     static let all = [
-        number, name,
+        dN, weight, number, name,
         lparen, rparen, lbrace, rbrace,
         pipe, define, defEval, select, selEval,
         comment, rule1, rule2,

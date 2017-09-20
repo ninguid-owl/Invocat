@@ -93,6 +93,30 @@ class ParserTests: XCTestCase {
         XCTAssertEqual(exps, expected)
     }
 
+    func testTable1FrequencyWeighted() {
+        let text = "name   \n" +
+                   "-------\n" +
+                   "1  opt1\n" +
+                   "1  opt2\n"
+        let table1items: [InvExp] = [.literal("opt1"), .literal("opt2")]
+        let expected: [InvExp] = [.definition("name", table1items)]
+        let tokens = Lexer.tokens(from: text)
+        let exps = parser.parse(tokens: tokens)
+        XCTAssertEqual(exps, expected)
+    }
+
+    func testTable1DieWeighted() {
+        let text = "d2  name\n" +
+                   "--------\n" +
+                   "1  opt1 \n" +
+                   "1  opt2 \n"
+        let table1items: [InvExp] = [.literal("opt1"), .literal("opt2")]
+        let expected: [InvExp] = [.definition("name", table1items)]
+        let tokens = Lexer.tokens(from: text)
+        let exps = parser.parse(tokens: tokens)
+        XCTAssertEqual(exps, expected)
+    }
+
     func testTable2() {
         let text = "name\n" +
                    "====\n" +
@@ -109,4 +133,23 @@ class ParserTests: XCTestCase {
         let exps = parser.parse(tokens: tokens)
         XCTAssertEqual(exps, expected)
     }
+
+    func testTable2FrequencyWeighted() {
+        let text = "name   \n" +
+                   "=======\n" +
+                   "2  opt1\n" +
+                   "   cont\n" +
+                   "-------\n" +
+                   "1  opt2\n" +
+                   "-------\n"
+        let table2items: [InvExp] = [
+            .mix(.mix(.literal("opt1"), .literal(" ")), .literal("cont")),
+            .literal("opt2")]
+        let expected: [InvExp] = [.definition("name", table2items)]
+        let tokens = Lexer.tokens(from: text)
+        let exps = parser.parse(tokens: tokens)
+        XCTAssertEqual(exps, expected)
+    }
+
+    // TODO: Enumerate tests for Linux.
 }

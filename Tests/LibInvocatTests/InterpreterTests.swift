@@ -34,6 +34,7 @@ class InterpreterTests: XCTestCase {
 
     func testMultilines() {
         let cases: [(test: String, expected: String?)] = [
+            // Trailing whitespace is insignificant in table.
             ("dragon murmurings   \n" +
              "=================   \n" +
              "still having joy    \n" +
@@ -43,6 +44,16 @@ class InterpreterTests: XCTestCase {
              "-----------------   \n", nil),
             ("(dragon murmurings)", "still having joy"),
             ("(dragon murmurings)", "the bloodline is not cut off"),
+            // Leading whitespace is insignificant in table.
+            ("eyeballs in a skull   \n" +
+             "===================   \n" +
+             "       still having   \n" +
+             "      consciousness   \n" +
+             "-------------------   \n" +
+             "       not dried up   \n" +
+             "-------------------   \n", nil),
+            ("(eyeballs in a skull)", "not dried up"),
+            ("(eyeballs in a skull)", "still having consciousness"),
         ]
         check(cases)
     }

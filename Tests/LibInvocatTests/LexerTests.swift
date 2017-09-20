@@ -126,6 +126,54 @@ class LexerTests: XCTestCase {
         checkTypes(text, expected)
     }
 
+    func testDN() {
+        var text: String
+        var expected: [TokenType]
+
+        // A dN can be followed by either two spaces ...
+        text = "d20  Shipwrecked"
+        expected = [.dN, .name, .eof]
+        checkTypes(text, expected)
+
+        // ... or a apace and punctuation.
+        text = "d20 / Shipwrecked"
+        expected = [.dN, .name, .eof]
+        checkTypes(text, expected)
+
+        // Otherwise, it's just a name.
+        text = "d20 Shipwrecked"
+        expected = [.name, .eof]
+        checkTypes(text, expected)
+
+        text = "d4"
+        expected = [.name, .eof]
+        checkTypes(text, expected)
+    }
+
+    func testWeights() {
+        var text: String
+        var expected: [TokenType]
+
+        // A weight is a number or range followed by at least 2 spaces ...
+        text = "1    2 silver coins"
+        expected = [.weight, .number, .white, .name, .eof]
+        checkTypes(text, expected)
+
+        text = "2-6  knotted threads"
+        expected = [.weight, .name, .eof]
+        checkTypes(text, expected)
+
+        // ... or a space and a punctuation mark.
+        text = "1 - 2 silver coins"
+        expected = [.weight, .number, .white, .name, .eof]
+        checkTypes(text, expected)
+
+        // This is a number.
+        text = "1 time"
+        expected = [.number, .white, .name, .eof]
+        checkTypes(text, expected)
+    }
+
     // Enumerate tests for Linux
     static var allTests = [
         ("testNameRegex", testNameRegex),
@@ -133,5 +181,7 @@ class LexerTests: XCTestCase {
         ("testEscapesAndSplit", testEscapesAndSplit),
         ("testCommentsAndRules", testCommentsAndRules),
         ("testNumbers", testNumbers),
+        ("testDN", testDN),
+        ("testWeights", testWeights),
     ]
 }

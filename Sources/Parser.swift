@@ -182,6 +182,11 @@ class Parser {
             exp1 = InvExp.mix(exp1, InvExp.literal(" "))
         }
 
+        // Consume leading whitespace in rule1 and rule2 defintion items
+        if terminator == .rule1 || terminator == .rule2 {
+            take(.white)
+        }
+
         // Return exp1 if at a terminator token, eof, or newline.
         if let _ = take(terminator) {
             // .rule1 is always followed by .newline
@@ -226,8 +231,12 @@ class Parser {
     ///
     /// A literal is a `.name`, `.number`, '.punctuation`, `.escape`, or
     /// `.white`, optionally followed by another literal.
+    /// A literal now also includes `.dN` and `.weight` when they are not
+    /// part of a definition. This means that we must attempt to match
+    /// definitions before literals.
     func literal() -> InvExp? {
-        let types: [TokenType] = [.name, .number, .punct, .escape, .white]
+        let types: [TokenType] = [.name, .number, .punct, .escape, .white,
+                                  .dN, .weight]
         if !peek(types) { return nil }
         
         var value: String = ""
@@ -243,9 +252,15 @@ class Parser {
     ///
     /// - Parameter separatedBy: The `TokenType` expected between each
     ///   expression. The default is `.pipe`.
-    func items(separatedBy separator: TokenType = .pipe) -> [InvExp] {
+    func items(separatedBy separator: TokenType = .pipe,
+               weightedBy weighting: WeightType = .frequency) -> [InvExp] {
         var exps: [InvExp] = []
         repeat {
+            // Ignore leading whitespace within items.
+            take(.white)
+            // Capture the optional weight; defaults to 1.
+            let wt = weighting.magnitude(token: take(.weight))
+            // TODO: Finish this! Semantics.
             guard let exp = mix(terminatedBy: separator) else {
                 fatalError(errorText("Expected expression parsing items."))
             }
@@ -269,10 +284,19 @@ class Parser {
     ///     option 2
     ///
     func table1() -> InvExp? {
-        guard let name = seq(.name, .newline, .rule1, .newline)?.first else {
-            return nil
+        let name: Token
+        let weighting: WeightType
+        if let n = seq(.name, .newline, .rule1, .newline)?.first {
+            name = n
+            weighting = .frequency
         }
-        return InvExp.definition(name.lexeme, items(separatedBy: .newline))
+        else if let n = seq(.dN, .name, .newline, .rule1, .newline)?[1] {
+            name = n
+            weighting = .die
+        }
+        else { return nil }
+        let items = self.items(separatedBy: .newline, weightedBy: weighting)
+        return InvExp.definition(name.lexeme, items)
     }
 
     /// Returns a `.definition` expression or `nil` if the expression can't be
@@ -292,10 +316,18 @@ class Parser {
     ///     ----------
     ///
     func table2() -> InvExp? {
-        guard let name = seq(.name, .newline, .rule2, .newline)?.first else {
-            return nil
+        let name: Token
+        let weighting: WeightType
+        if let n = seq(.name, .newline, .rule2, .newline)?.first {
+            name = n
+            weighting = .frequency
         }
-        let items = self.items(separatedBy: .rule1)
+        else if let n = seq(.dN, .name, .newline, .rule2, .newline)?[1] {
+            name = n
+            weighting = .die
+        }
+        else { return nil }
+        let items = self.items(separatedBy: .rule1, weightedBy: weighting)
         return InvExp.definition(name.lexeme, items)
     }
 
