@@ -30,8 +30,7 @@ class LexerTests: XCTestCase {
         regexMatch("a 1",   .name,  ".name should allow numbers")
     }
     
-    // Helper function to compare the token types returned by lexing
-    // with an expected set.
+    // Compares the token types returned by lexing with an expected set.
     func checkTypes(_ text: String, _ expected: [TokenType]) {
         let tokens: [Token] = Lexer.tokens(from: text)
         let types: [TokenType] = tokens.map{ $0.type }
@@ -39,41 +38,75 @@ class LexerTests: XCTestCase {
             "Unexpected token types in <\(text)>\n" +
             "\(tokens.map{ $0.description })")
     }
+
+    // Compares the lexems returned by lexing with an expected set.
+    func checkLexemes(_ text: String, _ expected: [String]) {
+        let tokens: [Token] = Lexer.tokens(from: text)
+        let lexemes: [String] = tokens.map{ $0.lexeme }
+        XCTAssertEqual(lexemes, expected,
+            "Unexpected lexemes in <\(text)>\n" +
+            "<\(lexemes.map{ $0.description })>")
+    }
     
     func testOperators() {
         var text: String
-        var expected: [TokenType]
+        var expectedTypes: [TokenType]
+        var expectedLexemes: [String]
         
         // Operators consume whitespace but it's significant between parens
         text = "artifact :: a (fixed quality) (weapon)"
-        expected = [.name, .define, .name, .white, .lparen, .name, .rparen,
-                    .white, .lparen, .name, .rparen, .eof]
-        checkTypes(text, expected)
+        expectedTypes = [.name, .define, .name, .white, .lparen, .name, .rparen,
+                         .white, .lparen, .name, .rparen, .eof]
+        expectedLexemes = ["artifact", "::", "a", " ", "(", "fixed quality",
+                           ")", " ", "(", "weapon", ")", ""]
+        checkTypes(text, expectedTypes)
+        checkLexemes(text, expectedLexemes)
         
         // Pipes consume whitespace
         text = "fixed quality <- gleaming | dull "
-        expected = [.name, .select, .name, .pipe, .name, .white, .eof]
-        checkTypes(text, expected)
+        expectedTypes = [.name, .select, .name, .pipe, .name, .white, .eof]
+        expectedLexemes = ["fixed quality", "<-", "gleaming", "|", "dull", " ", ""]
+        checkTypes(text, expectedTypes)
+        checkLexemes(text, expectedLexemes)
         
         // EvaluatingSelection operator
         text = "weapon <! {artifact}"
-        expected = [.name, .selEval, .lbrace, .name, .rbrace, .eof]
-        checkTypes(text, expected)
+        expectedTypes = [.name, .selEval, .lbrace, .name, .rbrace, .eof]
+        expectedLexemes = ["weapon", "<!", "{", "artifact", "}", ""]
+        checkTypes(text, expectedTypes)
+        checkLexemes(text, expectedLexemes)
 
         // EvaluatingDefine operator
         text = "weapon :! sword | axe"
-        expected = [.name, .defEval, .name, .pipe, .name, .eof]
-        checkTypes(text, expected)
+        expectedTypes = [.name, .defEval, .name, .pipe, .name, .eof]
+        expectedLexemes = ["weapon", ":!", "sword", "|", "axe", ""]
+        checkTypes(text, expectedTypes)
+        checkLexemes(text, expectedLexemes)
     }
 
-    func testEscapesAndSplit() {
+    func testEscapes() {
         var text: String
-        var expected: [TokenType]
+        var expectedTokens: [TokenType]
+        var expectedLexemes: [String]
 
         // More operators and escape characters
         text = "weapon <! {artifact} \\n"
-        expected = [.name, .selEval, .lbrace, .name, .rbrace, .white, .escape, .eof]
-        checkTypes(text, expected)
+        expectedTokens = [.name, .selEval, .lbrace, .name, .rbrace, .white, .escape, .eof]
+        expectedLexemes = ["weapon", "<!", "{", "artifact", "}", " ", "\n", ""]
+        checkTypes(text, expectedTokens)
+        checkLexemes(text, expectedLexemes)
+
+        // Check escaping backslash
+        text = "escape a backslash \\\\"
+        expectedTokens = [.name, .white, .escape, .eof]
+        expectedLexemes = ["escape a backslash", " ", "\\", ""]
+        checkTypes(text, expectedTokens)
+        checkLexemes(text, expectedLexemes)
+    }
+
+    func testSplit() {
+        var text: String
+        var expected: [TokenType]
 
         // Check split is consumed
         text = "a long line\\" + "\na continuation"
@@ -82,12 +115,7 @@ class LexerTests: XCTestCase {
 
         // Check trailing space is preserverd with split
         text = "a long line      \\" + "\na continuation"
-        expected = [.name, .white, .name,.eof]
-        checkTypes(text, expected)
-
-        // Check escaping backslash
-        text = "escape a backslash \\\\"
-        expected = [.name, .white, .escape, .eof]
+        expected = [.name, .white, .name, .eof]
         checkTypes(text, expected)
     }
 
@@ -105,10 +133,23 @@ class LexerTests: XCTestCase {
         expected = [.rule1, .newline, .rule2, .eof]
         checkTypes(text, expected)
 
-        // Comments are single-line only and eat leading whitespace
+        // Comments are single-line only and eat leading whitespace.
         text = "  -- " + "\nsomething here"
         expected = [.newline, .name, .eof]
         checkTypes(text, expected)
+    }
+
+    func testNewline() {
+        var text: String
+        var expectedTypes: [TokenType]
+        var expectedLexemes: [String]
+
+        // Newlines consume leading whitespace
+        text = "   \nnowhere"
+        expectedTypes = [.newline, .name, .eof]
+        expectedLexemes = ["\n", "nowhere", ""]
+        checkTypes(text, expectedTypes)
+        checkLexemes(text, expectedLexemes)
     }
 
     func testNumbers() {
@@ -178,8 +219,10 @@ class LexerTests: XCTestCase {
     static var allTests = [
         ("testNameRegex", testNameRegex),
         ("testOperators", testOperators),
-        ("testEscapesAndSplit", testEscapesAndSplit),
+        ("testEscapes", testEscapes),
+        ("testSplit", testSplit),
         ("testCommentsAndRules", testCommentsAndRules),
+        ("testNewline", testNewline),
         ("testNumbers", testNumbers),
         ("testDN", testDN),
         ("testWeights", testWeights),

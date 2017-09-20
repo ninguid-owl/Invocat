@@ -120,6 +120,19 @@ extension Token: CustomStringConvertible {
 /// A lexer for the Invocat language.
 struct Lexer {
 
+    // A mapping from escape sequences to their substitutions.
+    static let escapes: [String: String] = [
+        "\\n": "\n",
+        "\\t": "\t",
+        "\\r": "\r",
+        "\\(": "(",
+        "\\)": ")",
+        "\\{": "{",
+        "\\}": "}",
+        "\\|": "|",
+        "\\\\": "\\"
+    ]
+
     /// Scans the `text` and returns an array of `Tokens`.
     ///
     /// - Note: Comments and line split tokens are discarded.
@@ -134,11 +147,22 @@ struct Lexer {
             let (type, bounds) = nextTokenType(from: text, in: range)
             range = bounds.upperBound..<text.endIndex
 
-            if type == .comment || type == .split {
-                continue        // Don't add split or comment tokens.
+            var lex = text[bounds]
+            
+            switch type {
+            case .comment, .split:
+                continue            // Don't add comments or splits
+            case .newline:
+                lex = lex.trimmingCharacters(in: .whitespaces)
+                line += 1
+            case .escape:
+                lex = escapes[lex] ?? lex
+            case .pipe, .define, .defEval, .select, .selEval:
+                lex = lex.trimmingCharacters(in: .whitespaces)
+            default: break
             }
-            if type == .newline { line += 1 }
-            let token = Token(type: type, lexeme: text[bounds], line: line)
+
+            let token = Token(type: type, lexeme: lex, line: line)
             tokens.append(token)
         }
         // Add the .eof token
