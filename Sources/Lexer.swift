@@ -147,7 +147,7 @@ struct Lexer {
             let (type, bounds) = nextTokenType(from: text, in: range)
             range = bounds.upperBound..<text.endIndex
 
-            var lex = text[bounds]
+            var lex = String(text[bounds])
             
             switch type {
             case .comment, .split:
