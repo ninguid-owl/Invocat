@@ -32,6 +32,22 @@ class InterpreterTests: XCTestCase {
         check(cases)
     }
 
+    func testTable1() {
+        let cases: [(test: String, expected: String?)] = [
+            // Leading whitespace is insignificant in table.
+            ("""
+             color
+             --------
+             mazarine
+                 cochineal
+                     tartrazine
+             """, nil),
+            ("(color)", "cochineal"),
+            ("(color)", "mazarine"),
+            ]
+        check(cases)
+    }
+
     func testMultilines() {
         let cases: [(test: String, expected: String?)] = [
             // Trailing whitespace is insignificant in table.
@@ -61,6 +77,7 @@ class InterpreterTests: XCTestCase {
     // Enumerate tests for Linux
     static var allTests = [
         ("testComments", testComments),
+        ("testTable1", testTable1),
         ("testMultilines", testMultilines)
     ]
 }

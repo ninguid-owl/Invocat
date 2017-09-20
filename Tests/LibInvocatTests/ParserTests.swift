@@ -106,10 +106,10 @@ class ParserTests: XCTestCase {
     }
 
     func testTable1DieWeighted() {
-        let text = "d2  name\n" +
-                   "--------\n" +
-                   "1  opt1 \n" +
-                   "1  opt2 \n"
+        let text = "d4   name \n" +
+                   "----------\n" +
+                   "  1  opt1 \n" +
+                   "2-4  opt2 \n"
         let table1items: [InvExp] = [.literal("opt1"), .literal("opt2")]
         let expected: [InvExp] = [.definition("name", table1items)]
         let tokens = Lexer.tokens(from: text)

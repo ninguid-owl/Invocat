@@ -182,8 +182,8 @@ class Parser {
             exp1 = InvExp.mix(exp1, InvExp.literal(" "))
         }
 
-        // Consume leading whitespace in rule1 and rule2 defintion items
-        if terminator == .rule1 || terminator == .rule2 {
+        // Consume leading whitespace in table2 defintion items
+        if terminator == .rule1 {
             take(.white)
         }
 
@@ -250,8 +250,11 @@ class Parser {
 
     /// Captures a list of expressions and return them in an array.
     ///
-    /// - Parameter separatedBy: The `TokenType` expected between each
-    ///   expression. The default is `.pipe`.
+    /// - Parameters:
+    ///   - separatedBy: The `TokenType` expected between each
+    ///     expression. The default is `.pipe`.
+    ///   - weightedBy: The `WeightType` of the items list. Determines how any
+    ///     `.weight` tokens are converted into numeric values.
     func items(separatedBy separator: TokenType = .pipe,
                weightedBy weighting: WeightType = .frequency) -> [InvExp] {
         var exps: [InvExp] = []
