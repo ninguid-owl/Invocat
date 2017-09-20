@@ -178,13 +178,11 @@ class Parser {
         // If the separator is rule1, attempt to conusme a newline and if the
         // next token isn't the separator, join the next expression with a
         // space.
-        if terminator == .rule1, let _ = take(.newline), !peek(terminator) {
-            exp1 = InvExp.mix(exp1, InvExp.literal(" "))
-        }
-
-        // Consume leading whitespace in table2 defintion items
-        if terminator == .rule1 {
-            take(.white)
+        if terminator == .rule1, let _ = take(.newline) {
+            take(.white) // Consume leading white in a table2
+            if !peek(terminator) {
+                exp1 = InvExp.mix(exp1, InvExp.literal(" "))
+            }
         }
 
         // Return exp1 if at a terminator token, eof, or newline.
@@ -263,11 +261,13 @@ class Parser {
             take(.white)
             // Capture the optional weight; defaults to 1.
             let wt = weighting.magnitude(token: take(.weight))
-            // TODO: Finish this! Semantics.
             guard let exp = mix(terminatedBy: separator) else {
                 fatalError(errorText("Expected expression parsing items."))
             }
-            exps.append(exp)
+            // Weighting semantics are that an item with weight n is added
+            // to the array n times. This approach keeps things very simple.
+            // If it proves to be too expensive, we can reconsider it.
+            exps.append(contentsOf: Array(repeating: exp, count: wt))
         } while take(.newline, .eof) == nil  // Repeat until newline or eof
         return exps
     }
