@@ -118,7 +118,8 @@ class ParserTests: XCTestCase {
                    "----------\n" +
                    "  1  opt1 \n" +
                    "2-4  opt2 \n"
-        let table1items: [InvExp] = [.literal("opt1"), .literal("opt2")]
+        let table1items: [InvExp] = [.literal("opt1"), .literal("opt2"),
+                                     .literal("opt2"), .literal("opt2")]
         let expected: [InvExp] = [.definition("name", table1items)]
         let tokens = Lexer.tokens(from: text)
         let exps = parser.parse(tokens: tokens)
@@ -151,6 +152,7 @@ class ParserTests: XCTestCase {
                    "1  opt2\n" +
                    "-------\n"
         let table2items: [InvExp] = [
+            .mix(.mix(.literal("opt1"), .literal(" ")), .literal("cont")),
             .mix(.mix(.literal("opt1"), .literal(" ")), .literal("cont")),
             .literal("opt2")]
         let expected: [InvExp] = [.definition("name", table2items)]

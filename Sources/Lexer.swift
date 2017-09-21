@@ -23,17 +23,18 @@ enum WeightType {
     /// The magnitude is calculated according to the WeightType based on whether
     /// the token describes a range or an isolated number.
     func magnitude(token: Token?) -> Int {
-        guard let token = token else { return 1 }
-        guard token.type == .weight else { return 1 }
+        guard let token = token, token.type == .weight else { return 1 }
+        let values = token.lexeme.components(separatedBy: "-").flatMap{Int($0)}
+        guard !values.isEmpty else { return 1 }
+        let weightIsRange = values.count > 1
         switch self {
         case .die:
-            // TODO: parse die weight
-            break
+            if weightIsRange { return abs(values[0] - values[1]) + 1 }
+            else { return 1 }
         case .frequency:
-            // TODO: parse frequency weight
-            break
+            if weightIsRange { return abs(values[0] - values[1]) + 1 }
+            else { return values[0] }
         }
-        return 1
     }
 }
 

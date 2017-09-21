@@ -241,6 +241,25 @@ class LexerTests: XCTestCase {
         checkLexemes(text, expectedLexemes)
     }
 
+    func testWeightMagnitude() {
+        let die = WeightType.die
+        let frq = WeightType.frequency
+        let symbol = Token(type: .symbol, lexeme: "", line: 0)
+        let wtVal = Token(type: .weight, lexeme: "4", line: 0)
+        let wtRng = Token(type: .weight, lexeme: "19-20", line: 0)
+        let tests: [(Int, Int, String)] = [
+            (die.magnitude(token: nil),    1, "No token -> 1"),
+            (die.magnitude(token: symbol), 1, "A non-weight token -> 1"),
+            (frq.magnitude(token: symbol), 1, "A non-weight token -> 1"),
+            (die.magnitude(token: wtVal),  1, "A die value -> 1"),
+            (frq.magnitude(token: wtVal),  4, "A freq. value -> value"),
+            (die.magnitude(token: wtRng),  2, "A die range -> range mag."),
+            (frq.magnitude(token: wtRng),  2, "A freq. range -> range mag."),
+        ]
+        tests.forEach{ XCTAssertEqual($0.0, $0.1, $0.2) }
+
+    }
+
     // Enumerate tests for Linux
     static var allTests = [
         ("testNameRegex", testNameRegex),
@@ -253,5 +272,6 @@ class LexerTests: XCTestCase {
         ("testDN", testDN),
         ("testWeights", testWeights),
         ("testSymbols", testSymbols),
+        ("testWeightMagnitude", testWeightMagnitude)
     ]
 }
