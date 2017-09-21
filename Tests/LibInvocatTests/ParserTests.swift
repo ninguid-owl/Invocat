@@ -89,7 +89,15 @@ class ParserTests: XCTestCase {
         let expected: [InvExp] = [table1, .literal("not in table")]
         let tokens = Lexer.tokens(from: text)
         let exps = parser.parse(tokens: tokens)
-        exps.forEach{ print($0) }
+        XCTAssertEqual(exps, expected)
+    }
+
+    func testItems() {
+        let text = "animal :: 🐱 | 🦊"
+        let opts: [InvExp] = [.literal("🐱"), .literal("🦊")]
+        let expected: [InvExp] = [.definition("animal", opts)]
+        let tokens = Lexer.tokens(from: text)
+        let exps = parser.parse(tokens: tokens)
         XCTAssertEqual(exps, expected)
     }
 

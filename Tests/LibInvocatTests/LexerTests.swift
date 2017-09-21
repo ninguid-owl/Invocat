@@ -229,6 +229,18 @@ class LexerTests: XCTestCase {
         checkLexemes(text, expectedLexemes)
     }
 
+    func testSymbols() {
+        var text: String
+        var expectedTypes: [TokenType]
+        var expectedLexemes: [String]
+
+        text = "^$=🐱"
+        expectedTypes = [.symbol, .symbol, .symbol, .symbol, .eof]
+        expectedLexemes = ["^", "$", "=", "🐱", ""]
+        checkTypes(text, expectedTypes)
+        checkLexemes(text, expectedLexemes)
+    }
+
     // Enumerate tests for Linux
     static var allTests = [
         ("testNameRegex", testNameRegex),
@@ -240,5 +252,6 @@ class LexerTests: XCTestCase {
         ("testNumbers", testNumbers),
         ("testDN", testDN),
         ("testWeights", testWeights),
+        ("testSymbols", testSymbols),
     ]
 }

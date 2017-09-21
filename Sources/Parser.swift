@@ -87,7 +87,7 @@ class Parser {
         let last = current + types.count
         if  last > tokens.count { return nil }
         let actual = tokens[current..<last].map{ $0.type }
-        if types == actual {
+        if  types == actual {
             return types.map{ take($0)! }
         }
         return nil
@@ -234,7 +234,7 @@ class Parser {
     /// definitions before literals.
     func literal() -> InvExp? {
         let types: [TokenType] = [.name, .number, .punct, .escape, .white,
-                                  .dN, .weight]
+                                  .dN, .weight, .symbol]
         if !peek(types) { return nil }
         
         var value: String = ""

@@ -81,6 +81,7 @@ enum TokenType: String {
     case white   = "[\\s]+"
     case escape  = "\\\\[nrt(){}|\\\\]"
     case punct   = "[\\p{Punctuation}]"     // TODO: What is this used for?
+    case symbol  = "."                      // Match everything
 
     case eof     = ""
 
@@ -90,7 +91,7 @@ enum TokenType: String {
         lparen, rparen, lbrace, rbrace,
         pipe, define, defEval, select, selEval,
         comment, rule1, rule2,
-        split, newline, white, escape, punct
+        split, newline, white, escape, punct, symbol
     ]
 
     // TODO: define match method here?
