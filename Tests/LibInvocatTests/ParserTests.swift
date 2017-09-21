@@ -23,18 +23,6 @@ class ParserTests: XCTestCase {
         super.tearDown()
     }
 
-    func testPerformanceExample() {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
-    }
-
-    // TODO: recognize [19]
-    // TODO: blank lines and blank first line
-    // TODO: test escapes are rendered correctly
-    // TODO: error on unclosed paren or brace
-
     func testDefinition() {
         let text = "name :: (ref) {draw}"
         let expected: [InvExp] = [.definition("name", items)]
@@ -68,10 +56,12 @@ class ParserTests: XCTestCase {
     }
 
     func testTable1() {
-        let text = "name\n" +
-                   "----\n" +
-                   "opt1\n" +
-                   "opt2\n"
+        let text = """
+                   name
+                   ----
+                   opt1
+                   opt2
+                   """
         let table1items: [InvExp] = [.literal("opt1"), .literal("opt2")]
         let expected: [InvExp] = [.definition("name", table1items)]
         let tokens = Lexer.tokens(from: text)
@@ -80,11 +70,13 @@ class ParserTests: XCTestCase {
     }
 
     func testTable1End() {
-        let text = "name\n" +
-                   "----\n" +
-                   "opt1\n" +
-                   "\n"     +
-                   "not in table"
+        let text = """
+                   name
+                   ----
+                   opt1
+
+                   not in table
+                   """
         let table1: InvExp = .definition("name", [.literal("opt1")])
         let expected: [InvExp] = [table1, .literal("not in table")]
         let tokens = Lexer.tokens(from: text)
@@ -102,10 +94,12 @@ class ParserTests: XCTestCase {
     }
 
     func testTable1FrequencyWeighted() {
-        let text = "name   \n" +
-                   "-------\n" +
-                   "1  opt1\n" +
-                   "1  opt2\n"
+        let text = """
+                   name
+                   -------
+                   1  opt1
+                   1  opt2
+                   """
         let table1items: [InvExp] = [.literal("opt1"), .literal("opt2")]
         let expected: [InvExp] = [.definition("name", table1items)]
         let tokens = Lexer.tokens(from: text)
@@ -114,10 +108,12 @@ class ParserTests: XCTestCase {
     }
 
     func testTable1DieWeighted() {
-        let text = "d4   name \n" +
-                   "----------\n" +
-                   "  1  opt1 \n" +
-                   "2-4  opt2 \n"
+        let text = """
+                   d4   name
+                   ----------
+                     1  opt1
+                   2-4  opt2
+                   """
         let table1items: [InvExp] = [.literal("opt1"), .literal("opt2"),
                                      .literal("opt2"), .literal("opt2")]
         let expected: [InvExp] = [.definition("name", table1items)]
@@ -127,13 +123,15 @@ class ParserTests: XCTestCase {
     }
 
     func testTable2() {
-        let text = "name\n" +
-                   "====\n" +
-                   "opt1\n" +
-                   "cont\n" +
-                   "----\n" +
-                   "opt2\n" +
-                   "----\n"
+        let text = """
+                   name
+                   ====
+                   opt1
+                   cont
+                   ----
+                   opt2
+                   ----
+                   """
         let table2items: [InvExp] = [
             .mix(.mix(.literal("opt1"), .literal(" ")), .literal("cont")),
             .literal("opt2")]
@@ -144,13 +142,15 @@ class ParserTests: XCTestCase {
     }
 
     func testTable2FrequencyWeighted() {
-        let text = "name   \n" +
-                   "=======\n" +
-                   "2  opt1\n" +
-                   "   cont\n" +
-                   "-------\n" +
-                   "1  opt2\n" +
-                   "-------\n"
+        let text = """
+                   name
+                   =======
+                   2  opt1
+                      cont
+                   -------
+                   1  opt2
+                   -------
+                   """
         let table2items: [InvExp] = [
             .mix(.mix(.literal("opt1"), .literal(" ")), .literal("cont")),
             .mix(.mix(.literal("opt1"), .literal(" ")), .literal("cont")),
@@ -161,5 +161,19 @@ class ParserTests: XCTestCase {
         XCTAssertEqual(exps, expected)
     }
 
-    // TODO: Enumerate tests for Linux.
+    // Enumerate tests for Linux.
+    static var allTests = [
+        ("testDefinition", testDefinition),
+        ("testEvalDef", testEvalDef),
+        ("testSelection", testSelection),
+        ("testEvalSel", testEvalSel),
+        ("testTable1", testTable1),
+        ("testTable1End", testTable1End),
+        ("testItems", testItems),
+        ("testTable1FrequencyWeighted", testTable1FrequencyWeighted),
+        ("testTable1DieWeighted", testTable1DieWeighted),
+        ("testTable2", testTable2),
+        ("testTable2FrequencyWeighted", testTable2FrequencyWeighted)
+    ]
+
 }
