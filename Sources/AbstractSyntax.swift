@@ -212,7 +212,17 @@ extension Dictionary where Value: Sequence {
     var text: String {
         var result = ""
         for (name, items) in self {
-            result += "  \(name): \(items.flatMap({"\($0)"}).joined(separator: " | "))\n"
+            // Count unique items; the count is the weight.
+            var counts: [String: Int] = [:]
+            for key in items.map({"\($0)"}) {
+                counts[key] = (counts[key] ?? 0) + 1
+            }
+            let weightedItemList = counts.flatMap({
+                // Only show weights for weight > 1.
+                let weight = $0.value > 1 ? " *\($0.value)" : ""
+                return "\($0.key)\(weight)"
+            }).joined(separator: " | ")
+            result += "  \(name): \(weightedItemList)\n"
         }
         return "........................................................\n" +
                result +
