@@ -85,10 +85,22 @@ class InterpreterTests: XCTestCase {
         check(cases)
     }
 
+    func testNestedRefs() {
+        let cases: [(test: String, expected: String?)] = [
+        ("""
+         a :: summer | winter
+         summer :: lightning
+         ((a)) crowned
+         """, "lightning crowned")
+        ]
+        check(cases)
+    }
+
     // Enumerate tests for Linux
     static var allTests = [
         ("testComments", testComments),
         ("testTable1", testTable1),
-        ("testMultilines", testMultilines)
+        ("testMultilines", testMultilines),
+        ("testNestedRefs", testNestedRefs),
     ]
 }

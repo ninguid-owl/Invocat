@@ -93,6 +93,16 @@ class Parser {
         return nil
     }
 
+    /// Returns true if the previous token matches the given token type.
+    ///
+    /// - Parameter type: The token type to look for.
+    func prev(_ type: TokenType) -> Bool {
+        if let token = token(at: current-1) {
+            return type == token.type
+        }
+        return false
+    }
+
     /// Consumes all consecutive newline tokens.
     func takeNewlines() {
         while peek(.newline) { take(.newline) }
@@ -204,24 +214,29 @@ class Parser {
     /// Returns a `.reference` expression or `nil` if the expression can't be
     /// created from the current sequence of tokens.
     ///
-    /// A reference is a `.name` surrounded by parentheses: `(name)`
+    /// A reference is an InvExp surrounded by parentheses.
     func reference() -> InvExp? {
-        // TODO: test failure on unclosed paren.
-        guard let name = seq(.lparen, .name, .rparen)?[1] else {
+        let start = current
+        guard let _ = take(.lparen), let nameExp = mix(terminatedBy: .rparen) else {
+            current = start     // rewind the stack
             return nil
         }
-        return InvExp.reference(name.lexeme)
+        // Verify the last token was a right paren and not EOF or newline.
+        return prev(.rparen) ? InvExp.reference(nameExp) : nil
     }
 
     /// Returns a `.draw` expression or `nil` if the expression can't be
     /// created from the current sequence of tokens.
     ///
-    /// A draw is a `.name` surrounded by braces: `{name}`
+    /// A draw is an InvExp surrounded by braces.
     func draw() -> InvExp? {
-        guard let name = seq(.lbrace, .name, .rbrace)?[1] else {
+        let start = current
+        guard let _ = take(.lbrace), let nameExp = mix(terminatedBy: .rbrace) else {
+            current = start     // rewind the stack
             return nil
         }
-        return InvExp.draw(name.lexeme)
+        // Verify the last token was a right brace and not EOF or newline.
+        return prev(.rbrace) ? InvExp.draw(nameExp) : nil
     }
 
     /// Returns a `.literal` expression or `nil` if the expression can't be

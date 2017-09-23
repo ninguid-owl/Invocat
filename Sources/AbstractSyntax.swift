@@ -32,8 +32,8 @@ indirect enum InvExp {
     case selection            (String, [InvExp]) // (name, items) // <-
     case evaluatingDefinition (String, [InvExp]) // (name, items) // :!
     case evaluatingSelection  (String, [InvExp]) // (name, items) // <!
-    case reference            (String)           // (name)        // ()
-    case draw                 (String)           // (name)        // {}
+    case reference            (InvExp)           // (name!)       // ()
+    case draw                 (InvExp)           // (name!)       // {}
     case literal              (String)           // (literal)
     case mix                  (InvExp, InvExp)   // (item1, item2)
 }
@@ -103,10 +103,14 @@ class Evaluator {
                     newState[name] = [.literal(itemValue)]
                 }
             }
-        case let .reference(name):
-            (newState, value) = eval(randomElement(state[name]), in: newState)
-        case let .draw(name):
-            if let item = randomElement(state[name]) {
+        case let .reference(nameExp):
+            let (_, name) = eval(nameExp, in: newState)
+            if let name = name {
+                (newState, value) = eval(randomElement(state[name]), in: newState)
+            }
+        case let .draw(nameExp):
+            let (_, name) = eval(nameExp, in: newState)
+            if let name = name, let item = randomElement(state[name]) {
                 let remainingItems = newState[name]?.filter({$0 != item})
                 newState[name] = (remainingItems?.isEmpty ?? true) ? nil : remainingItems
                 (newState, value) = eval(item, in: newState)
@@ -137,10 +141,17 @@ infix operator ~!   // evaluatingSelection
 // Define operators
 // ... literal, reference, draw, definition, selection,
 // evaluatingDefinition, evaluatingSelection
+// TODO: remove?
 extension String {
-    static prefix func ^ (right: String) -> InvExp { return InvExp.literal(right) }
-    static prefix func * (right: String) -> InvExp { return InvExp.reference(right) }
-    static prefix func % (right: String) -> InvExp { return InvExp.draw(right) }
+    static prefix func ^ (right: String) -> InvExp {
+        return InvExp.literal(right)        
+    }
+    static prefix func * (right: String) -> InvExp {
+        return InvExp.reference(InvExp.literal(right))
+    }
+    static prefix func % (right: String) -> InvExp {
+        return InvExp.draw(InvExp.literal(right))
+    }
     static func * (left: String, right: [InvExp]) -> InvExp {
         return InvExp.definition(left, right)
     }
@@ -188,6 +199,31 @@ extension InvExp: CustomStringConvertible {
             return "\(literal)"
         case let .mix(item1, item2):
             return "\(item1)\(item2)"
+        }
+    }
+
+    var debugDescription: String {
+        switch self {
+        case let .definition(name, items):
+            let items = items.flatMap({$0.debugDescription}).joined(separator: " | ")
+            return "def(\(name) :: \(items))"
+        case let .selection(name, items):
+            let items = items.flatMap({$0.debugDescription}).joined(separator: " | ")
+            return "sel(\(name) <- \(items))"
+        case let .evaluatingDefinition(name, items):
+            let items = items.flatMap({$0.debugDescription}).joined(separator: " | ")
+            return "def!(\(name) :! \(items))"
+        case let .evaluatingSelection(name, items):
+            let items = items.flatMap({$0.debugDescription}).joined(separator: " | ")
+            return "sel!(\(name) <! \(items))"
+        case let .reference(name):
+            return "ref(\(name.debugDescription))"
+        case let .draw(name):
+            return "draw(\(name.debugDescription))"
+        case let .literal(literal):
+            return "lit(\(literal))"
+        case let .mix(item1, item2):
+            return "mix(\(item1.debugDescription), \(item2.debugDescription))"
         }
     }
 }

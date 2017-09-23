@@ -161,6 +161,67 @@ class ParserTests: XCTestCase {
         XCTAssertEqual(exps, expected)
     }
 
+    func testReference() {
+        let text = "(a)"
+        let expected: [InvExp] = [.reference("a")]
+        let tokens = Lexer.tokens(from: text)
+        let exps = parser.parse(tokens: tokens)
+        XCTAssertEqual(exps, expected)
+    }
+
+    func testDraw() {
+        let text = "{a}"
+        let expected: [InvExp] = [.draw("a")]
+        let tokens = Lexer.tokens(from: text)
+        let exps = parser.parse(tokens: tokens)
+        XCTAssertEqual(exps, expected)
+    }
+
+    func testNestedRefs() {
+        let text = "(nested (a))"
+        let expected: [InvExp] = [.reference(.mix("nested ", .reference("a")))]
+        let tokens = Lexer.tokens(from: text)
+        let exps = parser.parse(tokens: tokens)
+        XCTAssertEqual(exps, expected)
+    }
+
+    /* We don't yet support unmatched parens or brackets.
+    func testUnmatchedParen() {
+        let text = "((a)}"
+        let expected: [InvExp] = [.literal("("), .reference(.literal("a")), .literal("}")]
+        let tokens = Lexer.tokens(from: text)
+        let exps = parser.parse(tokens: tokens)
+
+        exps.forEach { print($0.debugDescription) }
+        XCTAssertEqual(exps, expected)
+    }
+
+    func testRefsEndWithRParen() {
+        // TODO: this test highlights an unintended behavior where refs and
+        // draws don't need to be terminated by their closing tokens if there's
+        // a pipe or newline.
+        let text = """
+                   ((a
+
+                   """
+        let expected: [InvExp] = [.literal("((a")]
+        let tokens = Lexer.tokens(from: text)
+        let exps = parser.parse(tokens: tokens)
+
+        exps.forEach { print($0.debugDescription) }
+
+        XCTAssertEqual(exps, expected)
+    }
+     */
+
+    func testInnerDraw() {
+        let text = "(literal {a})"
+        let expected: [InvExp] = [.reference(.mix("literal ", .draw("a")))]
+        let tokens = Lexer.tokens(from: text)
+        let exps = parser.parse(tokens: tokens)
+        XCTAssertEqual(exps, expected)
+    }
+
     // Enumerate tests for Linux.
     static var allTests = [
         ("testDefinition", testDefinition),
@@ -173,7 +234,12 @@ class ParserTests: XCTestCase {
         ("testTable1FrequencyWeighted", testTable1FrequencyWeighted),
         ("testTable1DieWeighted", testTable1DieWeighted),
         ("testTable2", testTable2),
-        ("testTable2FrequencyWeighted", testTable2FrequencyWeighted)
+        ("testTable2FrequencyWeighted", testTable2FrequencyWeighted),
+        ("testReference", testReference),
+        ("testDraw", testDraw),
+        ("testNestedRefs", testNestedRefs),
+        //("testUnmatchedParen", testUnmatchedParen),
+        //("testRefsEndWithRParen", testRefsEndWithRParen),
+        ("testInnerDraw", testInnerDraw),
     ]
-
 }

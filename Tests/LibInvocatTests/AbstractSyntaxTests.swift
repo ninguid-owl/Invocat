@@ -27,9 +27,9 @@ class AbstractSyntaxTests: XCTestCase {
     var lit_dot: InvExp { return .literal(val_dot) }
     var lit_mooniaddot: InvExp { return .literal(val_mooniaddot) }
 
-    var ref_x: InvExp { return .reference(val_x) }
-    var ref_y: InvExp { return .reference(val_y) }
-    var ref_a: InvExp { return .reference(val_a) }
+    var ref_x: InvExp { return .reference(.literal(val_x)) }
+    var ref_y: InvExp { return .reference(.literal(val_y)) }
+    var ref_a: InvExp { return .reference(.literal(val_a)) }
 
     var mix_mooniad: InvExp { return .mix(lit_moon, lit_iad) }
     var mix_mooniaddot: InvExp { return .mix(mix_mooniad, lit_dot) }
@@ -47,7 +47,7 @@ class AbstractSyntaxTests: XCTestCase {
     var evs_x1: InvExp { return .evaluatingSelection(val_x, [lit_moon]) }
     var evs_x4: InvExp { return .evaluatingSelection(val_x, [mix_mooniaddot, ref_a]) }
 
-    var drw_x2: InvExp { return .draw(val_x) }
+    var drw_x2: InvExp { return .draw(.literal(val_x)) }
 
     var env0: InvState = [:]
     var env_x1: InvState { return [val_x: [lit_moon]] }
@@ -124,7 +124,6 @@ class AbstractSyntaxTests: XCTestCase {
         checkEval(ref_y, in: env_x2y, expecting: (env_x2y, val_stars))
         checkEval(ref_y, in: env_x2y, expecting: (env_x2y, val_stars))
         //checkEval(ref_y, in: env_x2y, expecting: (env_x2y, val_moon))
-
     }
 
     func testDraw() {

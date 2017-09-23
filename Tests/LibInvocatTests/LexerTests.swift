@@ -257,7 +257,21 @@ class LexerTests: XCTestCase {
             (frq.magnitude(token: wtRng),  2, "A freq. range -> range mag."),
         ]
         tests.forEach{ XCTAssertEqual($0.0, $0.1, $0.2) }
+    }
 
+    func testNames() {
+        var text: String
+        var expectedTypes: [TokenType]
+        var expectedLexemes: [String]
+
+        // Names may not contain -
+        text = "(a) is a ref, but not (a ->)"
+        expectedTypes = [.lparen, .name, .rparen, .white, .name, .white,
+                         .lparen, .name, .white, .punct, .symbol, .rparen, .eof]
+        expectedLexemes = ["(", "a", ")", " ", "is a ref, but not", " ", "(",
+                           "a", " ", "-", ">", ")", ""]
+        checkTypes(text, expectedTypes)
+        checkLexemes(text, expectedLexemes)
     }
 
     // Enumerate tests for Linux
@@ -272,6 +286,7 @@ class LexerTests: XCTestCase {
         ("testDN", testDN),
         ("testWeights", testWeights),
         ("testSymbols", testSymbols),
-        ("testWeightMagnitude", testWeightMagnitude)
+        ("testWeightMagnitude", testWeightMagnitude),
+        ("testNames", testNames),
     ]
 }
