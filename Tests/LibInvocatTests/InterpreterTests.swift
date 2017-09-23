@@ -87,11 +87,22 @@ class InterpreterTests: XCTestCase {
 
     func testNestedRefs() {
         let cases: [(test: String, expected: String?)] = [
-        ("""
-         a :: summer | winter
-         summer :: lightning
-         ((a)) crowned
-         """, "lightning crowned")
+            ("""
+             a :: summer | winter
+             summer :: lightning
+             ((a)) crowned
+             """, "lightning crowned")
+        ]
+        check(cases)
+    }
+
+    func testInvalidRefsAndDraws() {
+        // Refs and draws that don't appear in the state dictionary are rendered
+        // as literals.
+        let cases: [(test: String, expected: String?)] = [
+            ("(undefined)", "(undefined)"),
+            ("{undefined}", "{undefined}"),
+            ("(an (undefined))", "(an (undefined))"),
         ]
         check(cases)
     }
@@ -102,5 +113,6 @@ class InterpreterTests: XCTestCase {
         ("testTable1", testTable1),
         ("testMultilines", testMultilines),
         ("testNestedRefs", testNestedRefs),
+        ("testInvalidRefsAndDraws", testInvalidRefsAndDraws),
     ]
 }

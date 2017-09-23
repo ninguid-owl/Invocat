@@ -104,17 +104,21 @@ class Evaluator {
                 }
             }
         case let .reference(nameExp):
-            let (_, name) = eval(nameExp, in: newState)
-            if let name = name {
-                (newState, value) = eval(randomElement(state[name]), in: newState)
+            let name: String?
+            (newState, name) = eval(nameExp, in: newState)
+            if let name = name, let item = randomElement(state[name])  {
+                (newState, value) = eval(item, in: newState)
             }
+            else { value = "(\(nameExp))" }
         case let .draw(nameExp):
-            let (_, name) = eval(nameExp, in: newState)
+            let name: String?
+            (newState, name) = eval(nameExp, in: newState)
             if let name = name, let item = randomElement(state[name]) {
                 let remainingItems = newState[name]?.filter({$0 != item})
                 newState[name] = (remainingItems?.isEmpty ?? true) ? nil : remainingItems
                 (newState, value) = eval(item, in: newState)
             }
+            else { value = "{\(nameExp)}" }
         case let .literal(literal):
             value = literal
         case let .mix(item1, item2):

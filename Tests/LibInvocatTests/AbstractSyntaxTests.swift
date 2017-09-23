@@ -20,6 +20,7 @@ class AbstractSyntaxTests: XCTestCase {
     let val_y = "y"
     let val_a = "a"
     let val_b = "b"
+    let val_ref_x = "(x)"
 
     var lit_moon: InvExp { return .literal(val_moon) }
     var lit_iad: InvExp { return .literal(val_iad) }
@@ -117,13 +118,13 @@ class AbstractSyntaxTests: XCTestCase {
     }
 
     func testReference() {
-        // Referenced definition doesn't exist yet -> ""
-        checkEval(ref_x, in: env0, expecting: (env0, val_none))
+        // Referenced definition doesn't exist yet -> literal reference
+        checkEval(ref_x, in: env0, expecting: (env0, val_ref_x))
         // A reference selects from the def randomly and evaluates the result
         checkEval(ref_y, in: env_x2y, expecting: (env_x2y, val_mooniad))
         checkEval(ref_y, in: env_x2y, expecting: (env_x2y, val_stars))
         checkEval(ref_y, in: env_x2y, expecting: (env_x2y, val_stars))
-        //checkEval(ref_y, in: env_x2y, expecting: (env_x2y, val_moon))
+        checkEval(ref_y, in: env_x2y, expecting: (env_x2y, val_moon))
     }
 
     func testDraw() {
