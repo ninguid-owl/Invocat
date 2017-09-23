@@ -185,10 +185,9 @@ class ParserTests: XCTestCase {
         XCTAssertEqual(exps, expected)
     }
 
-    /* We don't yet support unmatched parens or brackets.
     func testUnmatchedParen() {
         let text = "((a)}"
-        let expected: [InvExp] = [.literal("("), .reference(.literal("a")), .literal("}")]
+        let expected: [InvExp] = [.literal("("), .mix(.reference("a"), .literal("}"))]
         let tokens = Lexer.tokens(from: text)
         let exps = parser.parse(tokens: tokens)
 
@@ -197,22 +196,14 @@ class ParserTests: XCTestCase {
     }
 
     func testRefsEndWithRParen() {
-        // TODO: this test highlights an unintended behavior where refs and
-        // draws don't need to be terminated by their closing tokens if there's
-        // a pipe or newline.
-        let text = """
-                   ((a
-
-                   """
-        let expected: [InvExp] = [.literal("((a")]
+        // This text is parsed as a series of literals since the parens aren't
+        // closed.
+        let text = "((a"
+        let expected: [InvExp] = [.literal("("), .literal("("), .literal("a")]
         let tokens = Lexer.tokens(from: text)
         let exps = parser.parse(tokens: tokens)
-
-        exps.forEach { print($0.debugDescription) }
-
         XCTAssertEqual(exps, expected)
     }
-     */
 
     func testInnerDraw() {
         let text = "(literal {a})"

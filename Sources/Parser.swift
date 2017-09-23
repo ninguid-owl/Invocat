@@ -118,7 +118,7 @@ class Parser {
                selection()            ??    // name <- items
                evaluatingDefinition() ??    // name :! items
                evaluatingSelection()  ??    // name <! items
-               mix()                        // literal|reference|draw  mix
+               mix()                        // reference|draw|literal  mix
     }
 
     /// Returns a `.definition` expression or `nil` if the expression can't be
@@ -182,6 +182,12 @@ class Parser {
     /// - Parameter terminator: The token type on which to end the mix.
     func mix(terminatedBy terminator: TokenType = .pipe) -> InvExp? {
         guard var exp1 = reference() ?? draw() ?? literal() else {
+            // If nothing matches just force the current token into a literal
+            // and consume it.
+            if let unmatched = token()?.lexeme, !peek(.eof) {                
+                current += 1
+                return .literal(unmatched)
+            }
             return nil
         }
 
@@ -217,12 +223,15 @@ class Parser {
     /// A reference is an InvExp surrounded by parentheses.
     func reference() -> InvExp? {
         let start = current
-        guard let _ = take(.lparen), let nameExp = mix(terminatedBy: .rparen) else {
+        // Try to take a left paren and a mix ending in a right paren. Verify
+        // that the last token was actually a right paren since mix will also
+        // terminate on EOF or newline.
+        guard let _ = take(.lparen),
+              let nameExp = mix(terminatedBy: .rparen), prev(.rparen) else {
             current = start     // rewind the stack
             return nil
         }
-        // Verify the last token was a right paren and not EOF or newline.
-        return prev(.rparen) ? InvExp.reference(nameExp) : nil
+        return InvExp.reference(nameExp)
     }
 
     /// Returns a `.draw` expression or `nil` if the expression can't be
@@ -231,12 +240,15 @@ class Parser {
     /// A draw is an InvExp surrounded by braces.
     func draw() -> InvExp? {
         let start = current
-        guard let _ = take(.lbrace), let nameExp = mix(terminatedBy: .rbrace) else {
+        // Try to take a left brace and a mix ending in a right paren. Verify
+        // that the last token was actually a right paren since mix will also
+        // terminate on EOF or newline.
+        guard let _ = take(.lbrace),
+              let nameExp = mix(terminatedBy: .rbrace), prev(.rbrace) else {
             current = start     // rewind the stack
             return nil
         }
-        // Verify the last token was a right brace and not EOF or newline.
-        return prev(.rbrace) ? InvExp.draw(nameExp) : nil
+        return InvExp.draw(nameExp)
     }
 
     /// Returns a `.literal` expression or `nil` if the expression can't be
