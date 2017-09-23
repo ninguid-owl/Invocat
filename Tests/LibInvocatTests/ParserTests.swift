@@ -190,8 +190,6 @@ class ParserTests: XCTestCase {
         let expected: [InvExp] = [.literal("("), .mix(.reference("a"), .literal("}"))]
         let tokens = Lexer.tokens(from: text)
         let exps = parser.parse(tokens: tokens)
-
-        exps.forEach { print($0.debugDescription) }
         XCTAssertEqual(exps, expected)
     }
 
@@ -229,8 +227,8 @@ class ParserTests: XCTestCase {
         ("testReference", testReference),
         ("testDraw", testDraw),
         ("testNestedRefs", testNestedRefs),
-        //("testUnmatchedParen", testUnmatchedParen),
-        //("testRefsEndWithRParen", testRefsEndWithRParen),
+        ("testUnmatchedParen", testUnmatchedParen),
+        ("testRefsEndWithRParen", testRefsEndWithRParen),
         ("testInnerDraw", testInnerDraw),
     ]
 }
