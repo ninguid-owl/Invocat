@@ -187,7 +187,7 @@ class ParserTests: XCTestCase {
 
     func testUnmatchedParen() {
         let text = "((a)}"
-        let expected: [InvExp] = [.literal("("), .mix(.reference("a"), .literal("}"))]
+        let expected: [InvExp] = [.mix("(", .mix(.reference("a"), "}"))]
         let tokens = Lexer.tokens(from: text)
         let exps = parser.parse(tokens: tokens)
         XCTAssertEqual(exps, expected)
@@ -197,7 +197,7 @@ class ParserTests: XCTestCase {
         // This text is parsed as a series of literals since the parens aren't
         // closed.
         let text = "((a"
-        let expected: [InvExp] = [.literal("("), .literal("("), .literal("a")]
+        let expected: [InvExp] = [.mix("(", .mix("(", "a"))]
         let tokens = Lexer.tokens(from: text)
         let exps = parser.parse(tokens: tokens)
         XCTAssertEqual(exps, expected)

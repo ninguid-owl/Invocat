@@ -181,13 +181,7 @@ class Parser {
     ///
     /// - Parameter terminator: The token type on which to end the mix.
     func mix(terminatedBy terminator: TokenType = .pipe) -> InvExp? {
-        guard var exp1 = reference() ?? draw() ?? literal() else {
-            // If nothing matches just force the current token into a literal
-            // and consume it.
-            if let unmatched = token()?.lexeme, !peek(.eof) {                
-                current += 1
-                return .literal(unmatched)
-            }
+        guard var exp1 = reference() ?? draw() ?? literal() ?? special() else {
             return nil
         }
 
@@ -271,6 +265,20 @@ class Parser {
             }
         } while peek(types)
         return InvExp.literal(value)
+    }
+
+    /// Returns a `.literal` expression created from the current token or `nil`
+    /// if the token is `.eof`.
+    ///
+    /// This function essentially captures unmatched parens and braces and
+    /// renders them as `.literals` instead of throwing a parser error. Because
+    /// those tokens have special meaning, they are not captured by `literal()`.
+    func special() -> InvExp? {
+        guard let unmatched = token()?.lexeme, !peek(.eof) else {
+            return nil
+        }
+        current += 1
+        return .literal(unmatched)
     }
 
     /// Captures a list of expressions and return them in an array.
