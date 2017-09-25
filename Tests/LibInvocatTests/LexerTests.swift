@@ -57,7 +57,7 @@ class LexerTests: XCTestCase {
         text = "artifact :: a (fixed quality) (weapon)"
         expectedTypes = [.name, .define, .name, .white, .lparen, .name, .rparen,
                          .white, .lparen, .name, .rparen, .eof]
-        expectedLexemes = ["artifact", "::", "a", " ", "(", "fixed quality",
+        expectedLexemes = ["artifact", " :: ", "a", " ", "(", "fixed quality",
                            ")", " ", "(", "weapon", ")", ""]
         checkTypes(text, expectedTypes)
         checkLexemes(text, expectedLexemes)
@@ -65,21 +65,21 @@ class LexerTests: XCTestCase {
         // Pipes consume whitespace
         text = "fixed quality <- gleaming | dull "
         expectedTypes = [.name, .select, .name, .pipe, .name, .white, .eof]
-        expectedLexemes = ["fixed quality", "<-", "gleaming", "|", "dull", " ", ""]
+        expectedLexemes = ["fixed quality", " <- ", "gleaming", " | ", "dull", " ", ""]
         checkTypes(text, expectedTypes)
         checkLexemes(text, expectedLexemes)
         
         // EvaluatingSelection operator
         text = "weapon <! {artifact}"
         expectedTypes = [.name, .selEval, .lbrace, .name, .rbrace, .eof]
-        expectedLexemes = ["weapon", "<!", "{", "artifact", "}", ""]
+        expectedLexemes = ["weapon", " <! ", "{", "artifact", "}", ""]
         checkTypes(text, expectedTypes)
         checkLexemes(text, expectedLexemes)
 
         // EvaluatingDefine operator
         text = "weapon :! sword | axe"
         expectedTypes = [.name, .defEval, .name, .pipe, .name, .eof]
-        expectedLexemes = ["weapon", ":!", "sword", "|", "axe", ""]
+        expectedLexemes = ["weapon", " :! ", "sword", " | ", "axe", ""]
         checkTypes(text, expectedTypes)
         checkLexemes(text, expectedLexemes)
     }
@@ -92,7 +92,7 @@ class LexerTests: XCTestCase {
         // More operators and escape characters
         text = "weapon <! {artifact} \\n"
         expectedTokens = [.name, .selEval, .lbrace, .name, .rbrace, .white, .escape, .eof]
-        expectedLexemes = ["weapon", "<!", "{", "artifact", "}", " ", "\n", ""]
+        expectedLexemes = ["weapon", " <! ", "{", "artifact", "}", " ", "\n", ""]
         checkTypes(text, expectedTokens)
         checkLexemes(text, expectedLexemes)
 

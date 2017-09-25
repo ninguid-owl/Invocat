@@ -107,6 +107,13 @@ class InterpreterTests: XCTestCase {
         check(cases)
     }
 
+    func testLiteralPipes() {
+        let cases: [(test: String, expected: String?)] = [
+            ("a | b | c", "a | b | c"),
+        ]
+        check(cases)
+    }
+
     // Enumerate tests for Linux
     static var allTests = [
         ("testComments", testComments),
@@ -114,5 +121,6 @@ class InterpreterTests: XCTestCase {
         ("testMultilines", testMultilines),
         ("testNestedRefs", testNestedRefs),
         ("testInvalidRefsAndDraws", testInvalidRefsAndDraws),
+        ("testLiteralPipes", testLiteralPipes),
     ]
 }
