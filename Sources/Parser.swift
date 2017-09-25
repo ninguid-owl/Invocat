@@ -180,7 +180,7 @@ class Parser {
     /// terminating at `separator`.
     ///
     /// - Parameter terminator: The token type on which to end the mix.
-    func mix(terminatedBy terminator: TokenType = .pipe) -> InvExp? {
+    func mix(terminatedBy terminator: TokenType = .newline) -> InvExp? {
         guard var exp1 = reference() ?? draw() ?? literal() ?? special() else {
             return nil
         }
