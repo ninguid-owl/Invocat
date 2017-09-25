@@ -268,13 +268,13 @@ class Parser {
     }
 
     /// Returns a `.literal` expression created from the current token or `nil`
-    /// if the token is `.eof`.
+    /// if the token is `.eof` or `.newline`.
     ///
     /// This function essentially captures unmatched parens and braces and
     /// renders them as `.literals` instead of throwing a parser error. Because
     /// those tokens have special meaning, they are not captured by `literal()`.
     func special() -> InvExp? {
-        guard let unmatched = token()?.lexeme, !peek(.eof) else {
+        guard let unmatched = token()?.lexeme, !peek(.eof, .newline) else {
             return nil
         }
         current += 1
