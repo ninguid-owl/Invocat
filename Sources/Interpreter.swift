@@ -4,7 +4,7 @@
 //
 
 /// An interpreter for the Invocat language.
-class Interpreter {
+public class Interpreter {
     let parser: Parser
     let evaluator: Evaluator
 
@@ -12,7 +12,7 @@ class Interpreter {
     var state: InvState = [:]
 
     /// Initializes an Interpreter with a given random seed.
-    init(seed: String? = nil) {
+    public init(seed: String? = nil) {
         parser = Parser()
         evaluator = seed == nil ? Evaluator() : Evaluator(seed: seed!)
     }
@@ -37,7 +37,7 @@ class Interpreter {
     /// interpreter's state.
     ///
     /// - Parameter text: A String of Invocat source.
-    func eval(text: String) -> [String]? {
+    public func eval(text: String) -> [String]? {
         let tokens = Lexer.tokens(from: text)
         let expressions = parser.parse(tokens: tokens)
         let values = evaluate(expressions)
@@ -51,7 +51,7 @@ class Interpreter {
     /// interpreter's state.
     ///
     /// - Parameter file: A path to an Invocat source file.
-    func eval(file path: String) -> [String]? {
+    public func eval(file path: String) -> [String]? {
         guard let text = try? String(contentsOfFile: path) else { return nil }
         return eval(text: text)
     }
