@@ -134,6 +134,12 @@ class AbstractSyntaxTests: XCTestCase {
         checkEval(drw_x2, in: env_x1b, expecting: (env0, val_stars))
     }
 
+    func testEmptyEvaluatorSeed() {
+        // Using the empty string as a seed value results in a runtime error, so
+        // it's silently replaced in the Evaluator constructor.
+        let _ = Evaluator(seed: "")
+    }
+
     // Enumerate tests for Linux
     static var allTests = [
         ("testLiteral", testLiteral),
@@ -144,5 +150,6 @@ class AbstractSyntaxTests: XCTestCase {
         ("testEvaluatingSelection", testEvaluatingSelection),
         ("testReference", testReference),
         ("testDraw", testDraw),
+        ("testEmptyEvaluatorSeed", testEmptyEvaluatorSeed),
     ]
 }

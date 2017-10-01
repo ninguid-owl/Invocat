@@ -46,6 +46,8 @@ class Evaluator {
 
     /// Initializes an Evaluator with a given random seed.
     init(seed: String = "Today the furnace opens its mouth") {
+        // The empty string cannot be used as a seed.
+        let seed = seed != "" ? seed : "Today the furnace opens its mouth"
         let seedData = Data(seed.utf8)
         randomSource = GKARC4RandomSource(seed: seedData)
     }
