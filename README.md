@@ -27,8 +27,8 @@ Now that we have defined a grammar, we can generate examples from it,
 
     (Scene)
 
-which might produce `A Strain in the Library` (eh), `A Hex in the Atelier` (no),
-`A Laceration in the Drawing Room` (brilliant!), or any other combination.
+which might produce `A Strain in the Library` [eh], `A Hex in the Atelier` [no],
+`A Laceration in the Drawing Room` [brilliant], or any other combination.
 
 Notice that items are defined as literals that can contain spaces. Lists
 may be recursive:
@@ -91,7 +91,7 @@ call for axe work half the time and the use of a firebomb one sixth of the time.
     4-5  short bow
       6  firebomb!
 
-Note that despite the die weighting, the list would still be referenced as `(goblin tactics)`.
+Note that despite the die weighting, the list is still referenced as `(goblin tactics)`.
 
 ### Other operators
 
@@ -121,8 +121,61 @@ from the list. It allows you to sample without replacement.
 
 ## Language reference
 
-...
+### Literals
 
+Literal strings are defined without quotation marks or other delimiters. Strings can contain
+Unicode characters including emoji. Whitespace is significant inside of literals, but not
+outside.
+
+### Escapes
+
+Invocat uses the backslash `\` to provides escapes for the following characters:
+* `\n`, `\r`, `\t`
+* `(`, `)`, `{`, `}`
+* `|`, `\`
+
+### Comments
+
+Comments begin with two hyphens `--` followed by a space and continue until the end of
+the line.
+
+### Operators
+
+#### Definition `::`
+#### Evaluating definition `:!`
+#### Selection `<-`
+#### Evaluating selection `<!`
+#### Reference `( )`
+#### Draw `{ }`
+
+### Weights
+
+#### Frequency weighting
+
+Lists are frequency weighted by default. Weight values in this context represent the
+frequency of the list item.
+
+#### Die weighting
+
+Die weighting follows the notation used in random tables for roleplaying games, where a
+weight value represents either one face of a die or a range of faces.
+
+To specify that a list uses die weighting, prefix the list name with `dN` followed by at least
+two spaces, where `N` is any natural number--the value of `N` is not significant.
+
+#### Weight values
+
+A weight value can be either a natural number `n` or a range, `s-t` where `s` and `t` are
+natural numbers, followed by at least two spaces.
+
+Weight values are always optional per item. If a weight value is omitted, the item is weighted
+as 1.
+
+### Miscellaneous semantics
+
+* Refrences may be recursive `((A))`
+* An undefined reference returns the literal text of the reference.
+* A draw from an empty list evaluates to the literal text of the draw.
 
 ## Usage
 
