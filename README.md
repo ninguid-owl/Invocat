@@ -129,7 +129,7 @@ outside.
 
 ### Escapes
 
-Invocat uses the backslash `\` to provides escapes for the following characters:
+Invocat uses the backslash `\` to provide escapes for the following characters:
 * `\n`, `\r`, `\t`
 * `(`, `)`, `{`, `}`
 * `|`, `\`
@@ -142,11 +142,23 @@ the line.
 ### Operators
 
 #### Definition `::`
+...
+
 #### Evaluating definition `:!`
+...
+
 #### Selection `<-`
+...
+
 #### Evaluating selection `<!`
+...
+
 #### Reference `( )`
+...
+
 #### Draw `{ }`
+...
+
 
 ### Weights
 
