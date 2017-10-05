@@ -78,7 +78,7 @@ enum TokenType: String {
     case rule2   = "[=]{3,}.*"
 
     case split   = "[\\\\][\\v]"            // \ and vertical whitespace
-    case newline = "[\\p{Blank}]*[\\n]"     // newlines eat preceding whitespace
+    case newline = "[\\p{Blank}]*[\\v]"     // newlines eat preceding whitespace
     case white   = "[\\s]+"
     case escape  = "\\\\[nrt(){}|\\\\]"
     case punct   = "[\\p{Punctuation}]"     // TODO: What is this used for?
