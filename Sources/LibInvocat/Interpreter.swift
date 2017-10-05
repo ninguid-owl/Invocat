@@ -55,4 +55,9 @@ public class Interpreter {
         guard let text = try? String(contentsOfFile: path) else { return nil }
         return eval(text: text)
     }
+
+    /// Returns all of the names in the state dictionary.
+    public func names() -> [String]? {
+        return Array(state.keys)
+    }
 }
