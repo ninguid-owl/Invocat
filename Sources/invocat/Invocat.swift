@@ -60,8 +60,8 @@ class Invocat {
     /// Run the utility.
     ///
     /// Reads and interprets all files given as arguments. If the `interactive`
-    /// flag is set, opens an interactive prompt. At the moment this will just
-    /// collects input until EOF and then evaluate it.
+    /// flag is set, opens an interactive prompt. Input is evaluated after each
+    /// empty line or at EOF.
     func run() {
         // Evaluate all file arguments updating the interpreter's state
         for file in files {
@@ -69,7 +69,6 @@ class Invocat {
         }
 
         // TODO: Consider special commands and operators.
-        // TODO: Consider progressive evaluation.
         // Collect input until EOF, then evaluate it and print the results.
         var text: [String] = []
         while interactive {
@@ -80,6 +79,11 @@ class Invocat {
                 invocat.names()?.forEach{ print($0) }
             case "??state":
                 print("TODO: Show interpreter state")
+            case "":
+                // Evaluate the input so far and display the results.
+                let input = text.joined(separator: "\n")
+                invocat.eval(text: input)?.forEach{ print($0) }
+                text = []
             default:
                 if input.hasPrefix("?") {
                     print("TODO: Show state for entry")
