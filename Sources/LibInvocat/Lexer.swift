@@ -8,11 +8,13 @@ typealias Bounds = Range<String.Index>
 
 /// The types of weighting for items in a definition.
 ///
-/// The weighting is always over a uniform distribution.
-/// - `die`: Isolated numbers are weighted as 1; ranges are weighted as the
-///   magnitude of the range.
-/// - `frequency`: Isolated numbers are weighted as the magnitude of the number;
-///   ranges are not significant.
+/// The weighting is always over a uniform distribution. A weight, specified as
+/// an integer or a range, is interpreted according to the `WeightType` as
+/// either die or frequency notation.
+/// - `die`: An integer is weighted as 1; a range is weighted as the magnitude
+///   of the range.
+/// - `frequency`: An integer is weighted as the magnitude of the number;
+///   a range is not significant.
 enum WeightType {
     case die
     case frequency
@@ -21,7 +23,7 @@ enum WeightType {
     /// token.
     ///
     /// The magnitude is calculated according to the WeightType based on whether
-    /// the token describes a range or an isolated number.
+    /// the token describes a range or an integer.
     func magnitude(token: Token?) -> Int {
         guard let token = token, token.type == .weight else { return 1 }
         let values = token.lexeme.components(separatedBy: "-").flatMap{Int($0)}
